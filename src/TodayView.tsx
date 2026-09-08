@@ -96,7 +96,6 @@ export function TodayView({
       </div>
       <p className="caption">
         {done} of {total} done today
-        {state.goals[0] ? ` · Goal (kept off this screen): ${state.goals[0].title}` : ""}
       </p>
 
       <section>

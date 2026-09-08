@@ -189,6 +189,11 @@ form.event-form .span-2 {
   border-radius: 12px;
   padding: 8px;
   min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: left;
+  cursor: pointer;
 }
 
 .week-day strong {

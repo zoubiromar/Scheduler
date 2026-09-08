@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { AppState, CalendarEvent, Routine } from "./types";
-import { addDays, formatDisplayDate, formatTime } from "./lib/dates";
+import { addDays, formatDisplayDate, formatShortDate, formatTime } from "./lib/dates";
 import { occursOn } from "./lib/recurrence";
 
 interface TodayViewProps {
@@ -167,7 +167,7 @@ export function TodayView({
         <input name="startTime" type="time" defaultValue="15:00" />
         <input name="durationMinutes" type="number" min={15} step={15} defaultValue={60} />
         <button className="primary span-2" type="submit">
-          Add to {date}
+          Add to {formatShortDate(date)}
         </button>
       </form>
     </div>

@@ -38,6 +38,20 @@ export function formatDisplayDate(iso: string): string {
   });
 }
 
+export function formatWeekdayLabel(iso: string): string {
+  return parseISODate(iso).toLocaleDateString(undefined, {
+    weekday: "short",
+    day: "numeric",
+  });
+}
+
+export function formatShortDate(iso: string): string {
+  return parseISODate(iso).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export function minutesFromTime(hhmm: string): number {
   const [h, m] = hhmm.split(":").map(Number);
   return h * 60 + m;

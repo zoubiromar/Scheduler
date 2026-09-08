@@ -1,5 +1,11 @@
 import type { AppState } from "./types";
-import { addDays, formatTime, startOfWeekMonday, todayISO } from "./lib/dates";
+import {
+  addDays,
+  formatTime,
+  formatWeekdayLabel,
+  startOfWeekMonday,
+  todayISO,
+} from "./lib/dates";
 import { occursOn } from "./lib/recurrence";
 
 interface WeekViewProps {
@@ -16,10 +22,23 @@ export function WeekView({ date, state, onSelectDate }: WeekViewProps) {
   return (
     <div className="week">
       {days.map((iso) => {
-        const routines = state.routines.filter(
-          (routine) => occursOn(routine.recurrence, iso) && routine.startTime,
-        );
-        const events = state.events.filter((event) => event.date === iso);
+        const entries = [
+          ...state.routines
+            .filter((routine) => occursOn(routine.recurrence, iso) && routine.startTime)
+            .map((routine) => ({
+              key: routine.id,
+              startTime: routine.startTime as string,
+              title: routine.title,
+            })),
+          ...state.events
+            .filter((event) => event.date === iso)
+            .map((event) => ({
+              key: event.id,
+              startTime: event.startTime,
+              title: event.title,
+            })),
+        ].sort((a, b) => a.startTime.localeCompare(b.startTime));
+
         return (
           <button
             type="button"
@@ -27,15 +46,10 @@ export function WeekView({ date, state, onSelectDate }: WeekViewProps) {
             key={iso}
             onClick={() => onSelectDate(iso)}
           >
-            <strong>{iso.slice(5)}</strong>
-            {routines.map((routine) => (
-              <p key={routine.id}>
-                {formatTime(routine.startTime as string)} {routine.title}
-              </p>
-            ))}
-            {events.map((event) => (
-              <p key={event.id}>
-                {formatTime(event.startTime)} {event.title}
+            <strong>{formatWeekdayLabel(iso)}</strong>
+            {entries.map((entry) => (
+              <p key={entry.key}>
+                {formatTime(entry.startTime)} {entry.title}
               </p>
             ))}
           </button>

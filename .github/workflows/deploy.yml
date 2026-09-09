@@ -5,6 +5,10 @@ on:
     # The feature branch is included so the site can go live before the first
     # merge; `workflow_dispatch` only works once this file is on the default branch.
     branches: [main, cursor/dayline-scheduler-mvp-68cc]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - "prototype/**"
   workflow_dispatch:
 
 permissions:
@@ -31,6 +35,9 @@ jobs:
 
       - run: npm test
 
+      # Requires Pages to be enabled with "GitHub Actions" as the source.
+      # `enablement` only succeeds when the workflow token may create the site;
+      # otherwise enable it once under Settings > Pages (see README).
       - uses: actions/configure-pages@v5
         id: pages
         with:

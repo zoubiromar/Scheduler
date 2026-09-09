@@ -16,7 +16,9 @@ Open the paper prototype at [`prototype/today.html`](prototype/today.html) for i
 
 ## Hosting
 
-Pushing to `main` builds and publishes to GitHub Pages via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml), which enables Pages on first run. The site is then served from `https://<user>.github.io/<repo>/`.
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) builds and publishes to GitHub Pages, serving the site from `https://<user>.github.io/<repo>/`.
+
+**One-time setup:** open **Settings → Pages → Build and deployment** and set **Source** to **GitHub Actions**, then re-run the latest workflow. The workflow asks to enable Pages automatically, but that call is rejected when the workflow token cannot create a Pages site (`Resource not accessible by integration`), which is the default on many accounts. Until Pages is enabled, the site URL returns GitHub's own 404 page.
 
 Pages serves the app from a subdirectory, so CI passes the repo path as `BASE_PATH` and `vite.config.ts` normalizes it into Vite's `base`. To reproduce a production build locally:
 

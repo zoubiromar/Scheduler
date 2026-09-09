@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dayline — Today prototype</title>
+    <style>
+      :root {
+        --bg: #f4efe6;
+        --paper: #fffaf3;
+        --ink: #1c1916;
+        --muted: #6b6258;
+        --line: #e6ddd0;
+        --sage: #3f6b58;
+        --sage-soft: #d7eadf;
+        --coral: #c45c3e;
+        --gold: #c9a227;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+        background: var(--bg);
+        color: var(--ink);
+      }
+      .phone {
+        max-width: 420px;
+        margin: 24px auto 48px;
+        background: var(--paper);
+        border-radius: 28px;
+        box-shadow: 0 24px 60px rgba(28, 25, 22, 0.12);
+        overflow: hidden;
+        border: 1px solid var(--line);
+      }
+      header {
+        padding: 28px 24px 12px;
+      }
+      header p { margin: 0; color: var(--muted); font-size: 0.85rem; letter-spacing: 0.04em; }
+      header h1 { margin: 4px 0 0; font-size: 1.75rem; font-weight: 600; }
+      .progress {
+        margin: 8px 24px 16px;
+        background: var(--line);
+        border-radius: 999px;
+        height: 8px;
+      }
+      .progress > span {
+        display: block;
+        height: 8px;
+        width: 58%;
+        background: var(--sage);
+        border-radius: 999px;
+      }
+      .caption { margin: 0 24px 20px; font-size: 0.85rem; color: var(--muted); }
+      section { padding: 0 24px 20px; }
+      section h2 {
+        font-size: 0.75rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0 0 10px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .check {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        border: 2px solid var(--sage);
+        flex: 0 0 22px;
+        margin-top: 2px;
+        background: #fff;
+        cursor: pointer;
+      }
+      .check.on { background: var(--sage); }
+      .meta { font-size: 0.8rem; color: var(--muted); }
+      .time {
+        font-variant-numeric: tabular-nums;
+        font-size: 0.8rem;
+        color: var(--sage);
+        min-width: 3.2rem;
+      }
+      .timeline .card { align-items: center; }
+      footer {
+        padding: 16px 24px 28px;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .note {
+        max-width: 420px;
+        margin: 0 auto 40px;
+        padding: 0 16px;
+        color: var(--muted);
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <p class="note">
+      Paper prototype for interviews (see <code>docs/research/interview-protocol.md</code>).
+      Tap checkboxes. This file is static on purpose — the real app is the Vite PWA.
+    </p>
+    <div class="phone">
+      <header>
+        <p>Tuesday · September 8</p>
+        <h1>Today</h1>
+      </header>
+      <div class="progress" aria-hidden="true"><span></span></div>
+      <p class="caption">4 of 7 done · streak 3 days</p>
+
+      <section>
+        <h2>Routines</h2>
+        <div class="card">
+          <button class="check on" type="button" aria-label="Morning stretch done"></button>
+          <div>
+            <div>Morning stretch</div>
+            <div class="meta">Weekdays · 7:00 · 20 min</div>
+          </div>
+        </div>
+        <div class="card">
+          <button class="check" type="button" aria-label="Evening wind-down"></button>
+          <div>
+            <div>Evening wind-down</div>
+            <div class="meta">Daily · no clock · 15 min when you can</div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Daily checklist</h2>
+        <div class="card">
+          <button class="check on" type="button"></button>
+          <div>Drink water</div>
+        </div>
+        <div class="card">
+          <button class="check on" type="button"></button>
+          <div>Inbox to zero</div>
+        </div>
+        <div class="card">
+          <button class="check" type="button"></button>
+          <div>Walk outside</div>
+        </div>
+      </section>
+
+      <section class="timeline">
+        <h2>On the clock</h2>
+        <div class="card">
+          <div class="time">10:00</div>
+          <div>Deep work block <span class="meta">· 90 min</span></div>
+        </div>
+        <div class="card">
+          <div class="time">18:30</div>
+          <div>Dinner with Sam <span class="meta">· booking</span></div>
+        </div>
+      </section>
+      <footer>Fixed goals stay off this screen. Booking and Google Calendar are out of this prototype.</footer>
+    </div>
+    <script>
+      document.querySelectorAll(".check").forEach((el) => {
+        el.addEventListener("click", () => el.classList.toggle("on"));
+      });
+    </script>
+  </body>
+</html>

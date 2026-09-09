@@ -2,7 +2,9 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    # The feature branch is included so the site can go live before the first
+    # merge; `workflow_dispatch` only works once this file is on the default branch.
+    branches: [main, cursor/dayline-scheduler-mvp-68cc]
   workflow_dispatch:
 
 permissions:

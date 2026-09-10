@@ -99,13 +99,20 @@ export function TodayView({
     (occurrence) => occurrence.key === editingOccurrenceKey,
   );
 
+  function shiftDate(delta: number) {
+    setEditingEventId(null);
+    setEditingOccurrenceKey(null);
+    setAddingEvent(false);
+    onShiftDate(delta);
+  }
+
   return (
     <div>
       <div className="date-row">
-        <button className="ghost" type="button" onClick={() => onShiftDate(-1)}>Previous</button>
+        <button className="ghost" type="button" onClick={() => shiftDate(-1)}>Previous</button>
         <strong>{formatDisplayDate(date)}</strong>
-        <button className="ghost" type="button" onClick={() => onShiftDate(1)}>Next</button>
-        <button className="ghost" type="button" onClick={() => onShiftDate(0)}>Today</button>
+        <button className="ghost" type="button" onClick={() => shiftDate(1)}>Next</button>
+        <button className="ghost" type="button" onClick={() => shiftDate(0)}>Today</button>
       </div>
 
       <TagFilter tags={state.tags} selectedId={selectedTagId} onChange={onFilterChange} />
@@ -159,7 +166,15 @@ export function TodayView({
         <div className="section-heading compact">
           <h2>Anytime</h2>
           <div className="section-actions">
-            <button className="ghost" type="button" onClick={() => setAddingEvent(true)}>
+            <button
+              className="ghost"
+              type="button"
+              onClick={() => {
+                setEditingEventId(null);
+                setEditingOccurrenceKey(null);
+                setAddingEvent(true);
+              }}
+            >
               New one-time item
             </button>
             <button className="ghost" type="button" onClick={onCreateRepeating}>

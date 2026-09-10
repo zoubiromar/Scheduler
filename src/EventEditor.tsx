@@ -37,6 +37,10 @@ export function EventEditor({
       tagIds,
       completed: event?.completed ?? false,
     });
+    if (!event) {
+      setTitle("");
+      setTagIds([]);
+    }
   }
 
   return (

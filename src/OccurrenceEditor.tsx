@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TagChoices } from "./EventEditor";
+import { TagChoices } from "./TagChoices";
 import type { ResolvedTaskOccurrence } from "./lib/occurrences";
 import { occurrenceToOverride } from "./lib/occurrences";
 import type { Tag, TaskOccurrenceOverride } from "./types";
@@ -7,6 +7,7 @@ import type { Tag, TaskOccurrenceOverride } from "./types";
 interface OccurrenceEditorProps {
   occurrence: ResolvedTaskOccurrence;
   tags: Tag[];
+  onCreateTag: (tag: Tag) => void;
   onSave: (override: TaskOccurrenceOverride) => void;
   onRemove: (override: TaskOccurrenceOverride) => void;
   onReset: (taskId: string, originalDate: string) => void;
@@ -16,6 +17,7 @@ interface OccurrenceEditorProps {
 export function OccurrenceEditor({
   occurrence,
   tags,
+  onCreateTag,
   onSave,
   onRemove,
   onReset,
@@ -89,7 +91,12 @@ export function OccurrenceEditor({
           </label>
         </div>
       )}
-      <TagChoices tags={tags} selected={tagIds} onChange={setTagIds} />
+      <TagChoices
+        tags={tags}
+        selected={tagIds}
+        onChange={setTagIds}
+        onCreateTag={onCreateTag}
+      />
       <div className="editor-actions occurrence-actions">
         <button className="danger" type="button" onClick={() => onRemove(currentOverride(true))}>
           Remove this date

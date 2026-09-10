@@ -10,6 +10,7 @@ interface TasksViewProps {
   startCreating?: boolean;
   onSaveTask: (task: RepeatingTask) => void;
   onDeleteTask: (taskId: string) => void;
+  onCreateTag: (tag: Tag) => void;
   onEditorClosed: () => void;
 }
 
@@ -30,6 +31,7 @@ export function TasksView({
   startCreating,
   onSaveTask,
   onDeleteTask,
+  onCreateTag,
   onEditorClosed,
 }: TasksViewProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -49,6 +51,7 @@ export function TasksView({
         key={editing?.id ?? "new"}
         task={editing}
         tags={tags}
+        onCreateTag={onCreateTag}
         onCancel={closeEditor}
         onSave={(task) => {
           onSaveTask(task);

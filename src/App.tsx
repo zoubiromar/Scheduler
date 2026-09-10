@@ -101,7 +101,13 @@ export default function App() {
   }
 
   function addTag(tag: Tag) {
-    setState((current) => ({ ...current, tags: [...current.tags, tag] }));
+    setState((current) =>
+      current.tags.some(
+        (existing) => existing.name.toLowerCase() === tag.name.toLowerCase(),
+      )
+        ? current
+        : { ...current, tags: [...current.tags, tag] },
+    );
   }
 
   function updateTag(tagId: string, patch: Partial<Pick<Tag, "name" | "color">>) {
@@ -208,6 +214,7 @@ export default function App() {
             setCreateTaskRequested(true);
             setTab("tasks");
           }}
+          onCreateTag={addTag}
           onShiftDate={(delta) => setDate(shiftIso(date, delta, today))}
         />
       )}
@@ -247,6 +254,7 @@ export default function App() {
               ),
             }))
           }
+          onCreateTag={addTag}
         />
       )}
 

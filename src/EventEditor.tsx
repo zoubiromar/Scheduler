@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { TagChoices } from "./TagChoices";
 import type { CalendarEvent, Tag } from "./types";
 
 interface EventEditorProps {
   date: string;
   event?: CalendarEvent;
   tags: Tag[];
+  onCreateTag: (tag: Tag) => void;
   onSave: (event: CalendarEvent) => void;
   onCancel?: () => void;
   onDelete?: (eventId: string) => void;
@@ -14,6 +16,7 @@ export function EventEditor({
   date,
   event,
   tags,
+  onCreateTag,
   onSave,
   onCancel,
   onDelete,
@@ -84,7 +87,12 @@ export function EventEditor({
           </label>
         </div>
       )}
-      <TagChoices tags={tags} selected={tagIds} onChange={setTagIds} />
+      <TagChoices
+        tags={tags}
+        selected={tagIds}
+        onChange={setTagIds}
+        onCreateTag={onCreateTag}
+      />
       <div className="editor-actions">
         {event && onDelete && (
           <button className="danger" type="button" onClick={() => onDelete(event.id)}>Delete item</button>
@@ -94,40 +102,5 @@ export function EventEditor({
         </button>
       </div>
     </div>
-  );
-}
-
-export function TagChoices({
-  tags,
-  selected,
-  onChange,
-}: {
-  tags: Tag[];
-  selected: string[];
-  onChange: (ids: string[]) => void;
-}) {
-  return (
-    <fieldset className="tag-picker compact-picker">
-      <legend>Tags</legend>
-      <div className="tag-list">
-        {tags.map((tag) => (
-          <button
-            type="button"
-            className={`tag-chip${selected.includes(tag.id) ? " selected" : ""}`}
-            style={{ "--tag-color": tag.color } as React.CSSProperties}
-            key={tag.id}
-            onClick={() =>
-              onChange(
-                selected.includes(tag.id)
-                  ? selected.filter((id) => id !== tag.id)
-                  : [...selected, tag.id],
-              )
-            }
-          >
-            {tag.name}
-          </button>
-        ))}
-      </div>
-    </fieldset>
   );
 }

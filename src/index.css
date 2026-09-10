@@ -218,6 +218,13 @@ button:disabled {
   font-size: 0.75rem;
 }
 
+.section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
 .filter-row,
 .tag-list {
   display: flex;
@@ -411,6 +418,42 @@ button:disabled {
 
 .tag-picker .tag-list {
   margin-top: 4px;
+}
+
+.quick-tag-toggle {
+  width: 30px;
+  height: 30px;
+  border: 1px dashed var(--muted);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--sage);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.quick-tag-form {
+  display: grid;
+  grid-template-columns: 38px minmax(140px, 1fr) auto auto;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.quick-tag-form input[type="color"] {
+  width: 36px;
+  height: 34px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.quick-tag-form input:not([type="color"]) {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  padding: 8px 10px;
 }
 
 .skip-row {
@@ -827,5 +870,9 @@ button:disabled {
   .tag-editor-row .danger,
   .new-tag-card .primary {
     grid-column: 2;
+  }
+
+  .quick-tag-form {
+    grid-template-columns: 36px 1fr;
   }
 }

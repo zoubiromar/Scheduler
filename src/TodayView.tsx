@@ -17,6 +17,7 @@ interface TodayViewProps {
   onSaveEvent: (event: CalendarEvent) => void;
   onDeleteEvent: (eventId: string) => void;
   onSaveOccurrenceOverride: (override: TaskOccurrenceOverride) => void;
+  onSkipOccurrence: (taskId: string, originalDate: string) => void;
   onResetOccurrence: (taskId: string, originalDate: string) => void;
   onCreateRepeating: () => void;
   onCreateTag: (tag: AppState["tags"][number]) => void;
@@ -33,6 +34,7 @@ export function TodayView({
   onSaveEvent,
   onDeleteEvent,
   onSaveOccurrenceOverride,
+  onSkipOccurrence,
   onResetOccurrence,
   onCreateRepeating,
   onCreateTag,
@@ -132,8 +134,8 @@ export function TodayView({
             onSaveOccurrenceOverride(override);
             setEditingOccurrenceKey(null);
           }}
-          onRemove={(override) => {
-            onSaveOccurrenceOverride(override);
+          onRemove={(taskId, originalDate) => {
+            onSkipOccurrence(taskId, originalDate);
             setEditingOccurrenceKey(null);
           }}
           onReset={(taskId, originalDate) => {

@@ -100,6 +100,28 @@ export default function App() {
     }));
   }
 
+  function skipOccurrence(taskId: string, originalDate: string) {
+    setState((current) => ({
+      ...current,
+      tasks: current.tasks.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              recurrence: {
+                ...task.recurrence,
+                exdates: [
+                  ...new Set([...(task.recurrence.exdates ?? []), originalDate]),
+                ].sort(),
+              },
+            }
+          : task,
+      ),
+      occurrenceOverrides: current.occurrenceOverrides.filter(
+        (entry) => !(entry.taskId === taskId && entry.originalDate === originalDate),
+      ),
+    }));
+  }
+
   function addTag(tag: Tag) {
     setState((current) =>
       current.tags.some(
@@ -209,6 +231,7 @@ export default function App() {
             }))
           }
           onSaveOccurrenceOverride={saveOccurrenceOverride}
+          onSkipOccurrence={skipOccurrence}
           onResetOccurrence={resetOccurrence}
           onCreateRepeating={() => {
             setCreateTaskRequested(true);

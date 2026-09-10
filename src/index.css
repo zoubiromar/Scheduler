@@ -663,8 +663,9 @@ button:disabled {
 
 .timeline-bar {
   --lanes: 1;
+  --overflow-space: 0px;
   position: relative;
-  min-height: calc(var(--lanes) * 34px + 10px);
+  min-height: calc(var(--lanes) * 34px + 10px + var(--overflow-space));
   overflow: visible;
   border-radius: 9px;
   background: #fff;
@@ -761,13 +762,30 @@ button:disabled {
 }
 
 .overflow-list {
+  position: absolute;
+  right: 4px;
+  bottom: 3px;
+  left: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.overflow-edge {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
-  margin-top: 5px;
+  max-width: 48%;
+}
+
+.overflow-edge-end {
+  justify-content: flex-end;
 }
 
 .overflow-chip {
+  pointer-events: auto;
   background: var(--line);
   color: var(--muted);
   border-radius: 999px;

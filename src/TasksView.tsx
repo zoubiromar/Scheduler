@@ -20,9 +20,11 @@ export function recurrenceSummary(task: RepeatingTask): string {
     rule.kind === "weekdays"
       ? rule.days.map((day) => WEEKDAY_NAMES[day]).join(", ")
       : `Days ${rule.active.map((day) => day + 1).join(", ")} of ${rule.length}`;
+  const start =
+    rule.kind === "cycle" ? ` · from ${formatShortDate(rule.startDate)}` : "";
   const time = task.startTime ? ` · ${formatTime(task.startTime)}` : " · anytime";
   const end = rule.endDate ? ` · until ${formatShortDate(rule.endDate)}` : "";
-  return `${pattern}${time}${end}`;
+  return `${pattern}${start}${time}${end}`;
 }
 
 export function TasksView({

@@ -38,8 +38,10 @@ When the public booking route (`/book/:slug`) lands, static hosting will also ne
 
 ## What this repo includes
 
-- Interactive Today / Week views with seed routines, checklist, and timed events
-- Recurrence (`daily`, `weekly` weekdays, interval, `exdates`, `count`)
+- Interactive Today view and vertically stacked 8am–midnight week timeline
+- Repeating tasks on weekdays or visual N-day loops (for example days 1, 4, and 5 of 6)
+- Tasks menu to create, edit, skip, and delete repeating series
+- User-created tags and filters instead of event-source categories
 - Availability helper for the future booking page
 - PWA manifest (installable)
 

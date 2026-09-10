@@ -1,19 +1,19 @@
-import type { CalendarEvent, Routine, TimeRange } from "../types";
+import type { CalendarEvent, RepeatingTask, TimeRange } from "../types";
 import { minutesFromTime, timeFromMinutes, weekdayOf } from "./dates";
 import { occursOn } from "./recurrence";
 
 export function busyRangesOnDate(
   date: string,
-  routines: Routine[],
+  tasks: RepeatingTask[],
   events: CalendarEvent[],
 ): TimeRange[] {
   const ranges: TimeRange[] = [];
 
-  for (const routine of routines) {
-    if (!routine.startTime || routine.durationMinutes == null) continue;
-    if (!occursOn(routine.recurrence, date)) continue;
-    const start = minutesFromTime(routine.startTime);
-    ranges.push({ startMinutes: start, endMinutes: start + routine.durationMinutes });
+  for (const task of tasks) {
+    if (!task.startTime || task.durationMinutes == null) continue;
+    if (!occursOn(task.recurrence, date)) continue;
+    const start = minutesFromTime(task.startTime);
+    ranges.push({ startMinutes: start, endMinutes: start + task.durationMinutes });
   }
 
   for (const event of events) {

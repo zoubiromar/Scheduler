@@ -1,28 +1,36 @@
 export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
-export type RecurrenceFrequency = "daily" | "weekly";
-
-export interface RecurrenceRule {
-  frequency: RecurrenceFrequency;
-  interval: number;
-  byWeekday?: Weekday[];
+interface RecurrenceBounds {
   startDate: string;
   endDate?: string;
-  count?: number;
   exdates?: string[];
 }
 
-export interface Routine {
+export interface WeekdayRecurrence extends RecurrenceBounds {
+  kind: "weekdays";
+  days: Weekday[];
+}
+
+export interface CycleRecurrence extends RecurrenceBounds {
+  kind: "cycle";
+  length: number;
+  active: number[];
+}
+
+export type Recurrence = WeekdayRecurrence | CycleRecurrence;
+
+export interface RepeatingTask {
   id: string;
   title: string;
   notes?: string;
   startTime?: string;
   durationMinutes?: number;
-  recurrence: RecurrenceRule;
+  recurrence: Recurrence;
+  tagIds: string[];
 }
 
-export interface RoutineCompletion {
-  routineId: string;
+export interface TaskCompletion {
+  taskId: string;
   date: string;
 }
 
@@ -35,29 +43,20 @@ export interface CalendarEvent {
   startTime: string;
   durationMinutes: number;
   source: EventSource;
+  tagIds: string[];
 }
 
-export interface ChecklistItem {
+export interface Tag {
   id: string;
-  title: string;
-}
-
-export interface ChecklistTemplate {
-  id: string;
-  reset: "daily";
-  items: ChecklistItem[];
-}
-
-export interface DailyChecklistState {
-  date: string;
-  doneItemIds: string[];
+  name: string;
+  color: string;
 }
 
 export interface Goal {
   id: string;
   title: string;
   horizon: "quarter" | "year";
-  linkedRoutineIds: string[];
+  linkedTaskIds: string[];
 }
 
 export interface WeeklyWindow {
@@ -78,11 +77,10 @@ export interface BookingPage {
 }
 
 export interface AppState {
-  routines: Routine[];
-  completions: RoutineCompletion[];
+  tasks: RepeatingTask[];
+  completions: TaskCompletion[];
   events: CalendarEvent[];
-  checklist: ChecklistTemplate;
-  dailyChecklists: DailyChecklistState[];
+  tags: Tag[];
   goals: Goal[];
   bookingPage: BookingPage;
 }

@@ -1,17 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import type { AppState, CalendarEvent } from "./types";
 import { TodayView, shiftIso } from "./TodayView";
+import { TasksView } from "./TasksView";
 import { WeekView } from "./WeekView";
-import { loadState, saveState, seedState } from "./lib/storage";
+import { loadState, saveState, seedState, STORAGE_KEY } from "./lib/storage";
 import { addDays, todayISO } from "./lib/dates";
 import { busyRangesOnDate, formatSlot, freeSlots, weekdayWindow } from "./lib/availability";
+import type { RepeatingTask, Tag } from "./types";
 
-type Tab = "today" | "week" | "book";
+type Tab = "today" | "week" | "tasks" | "book";
 
 export default function App() {
   const [state, setState] = useState<AppState>(() => loadState());
   const [date, setDate] = useState(todayISO);
   const [tab, setTab] = useState<Tab>("today");
+  const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
+  const [createTaskRequested, setCreateTaskRequested] = useState(false);
 
   useEffect(() => {
     saveState(state);
@@ -19,48 +23,73 @@ export default function App() {
 
   const today = todayISO();
 
-  function toggleRoutine(routineId: string) {
+  function toggleTask(taskId: string, completionDate: string) {
     setState((current) => {
       const exists = current.completions.some(
-        (c) => c.routineId === routineId && c.date === date,
+        (completion) =>
+          completion.taskId === taskId && completion.date === completionDate,
       );
       return {
         ...current,
         completions: exists
           ? current.completions.filter(
-              (c) => !(c.routineId === routineId && c.date === date),
+              (completion) =>
+                !(
+                  completion.taskId === taskId &&
+                  completion.date === completionDate
+                ),
             )
-          : [...current.completions, { routineId, date }],
+          : [...current.completions, { taskId, date: completionDate }],
       };
     });
   }
 
-  function toggleChecklist(itemId: string) {
-    setState((current) => {
-      const existing = current.dailyChecklists.find((d) => d.date === date);
-      const done = new Set(existing?.doneItemIds ?? []);
-      if (done.has(itemId)) done.delete(itemId);
-      else done.add(itemId);
-      const next = { date, doneItemIds: [...done] };
-      return {
-        ...current,
-        dailyChecklists: [
-          ...current.dailyChecklists.filter((d) => d.date !== date),
-          next,
-        ],
-      };
-    });
+  function saveEvent(event: CalendarEvent) {
+    setState((current) => ({
+      ...current,
+      events: [...current.events.filter((entry) => entry.id !== event.id), event],
+    }));
   }
 
-  function addEvent(event: CalendarEvent) {
-    setState((current) => ({ ...current, events: [...current.events, event] }));
+  function saveTask(task: RepeatingTask) {
+    setState((current) => ({
+      ...current,
+      tasks: [...current.tasks.filter((entry) => entry.id !== task.id), task],
+    }));
+  }
+
+  function addTag(tag: Tag) {
+    setState((current) => ({ ...current, tags: [...current.tags, tag] }));
+  }
+
+  function renameTag(tagId: string, name: string) {
+    setState((current) => ({
+      ...current,
+      tags: current.tags.map((tag) => (tag.id === tagId ? { ...tag, name } : tag)),
+    }));
+  }
+
+  function deleteTag(tagId: string) {
+    setState((current) => ({
+      ...current,
+      tags: current.tags.filter((tag) => tag.id !== tagId),
+      tasks: current.tasks.map((task) => ({
+        ...task,
+        tagIds: task.tagIds.filter((id) => id !== tagId),
+      })),
+      events: current.events.map((event) => ({
+        ...event,
+        tagIds: event.tagIds.filter((id) => id !== tagId),
+      })),
+    }));
+    if (selectedTagId === tagId) setSelectedTagId(null);
   }
 
   const bookSlots = useMemo(() => {
     const page = state.bookingPage;
     const window = weekdayWindow(page.weeklyHours, date);
     if (!window) return [];
-    const busy = busyRangesOnDate(date, state.routines, state.events);
+    const busy = busyRangesOnDate(date, state.tasks, state.events);
     return freeSlots({
       window,
       busy,
@@ -83,6 +112,9 @@ export default function App() {
           <button className={tab === "week" ? "active" : ""} type="button" onClick={() => setTab("week")}>
             Week
           </button>
+          <button className={tab === "tasks" ? "active" : ""} type="button" onClick={() => setTab("tasks")}>
+            Tasks
+          </button>
           <button className={tab === "book" ? "active" : ""} type="button" onClick={() => setTab("book")}>
             Booking
           </button>
@@ -93,9 +125,20 @@ export default function App() {
         <TodayView
           date={date}
           state={state}
-          onToggleRoutine={toggleRoutine}
-          onToggleChecklist={toggleChecklist}
-          onAddEvent={addEvent}
+          selectedTagId={selectedTagId}
+          onFilterChange={setSelectedTagId}
+          onToggleTask={toggleTask}
+          onSaveEvent={saveEvent}
+          onDeleteEvent={(eventId) =>
+            setState((current) => ({
+              ...current,
+              events: current.events.filter((event) => event.id !== eventId),
+            }))
+          }
+          onCreateRepeating={() => {
+            setCreateTaskRequested(true);
+            setTab("tasks");
+          }}
           onShiftDate={(delta) => setDate(shiftIso(date, delta, today))}
         />
       )}
@@ -104,10 +147,34 @@ export default function App() {
         <WeekView
           date={date}
           state={state}
+          selectedTagId={selectedTagId}
+          onFilterChange={setSelectedTagId}
+          onToggleTask={toggleTask}
+          onShiftWeek={(delta) => setDate(addDays(date, delta * 7))}
           onSelectDate={(iso) => {
             setDate(iso);
             setTab("today");
           }}
+        />
+      )}
+
+      {tab === "tasks" && (
+        <TasksView
+          key={createTaskRequested ? "create-requested" : "tasks"}
+          tasks={state.tasks}
+          tags={state.tags}
+          startCreating={createTaskRequested}
+          onEditorClosed={() => setCreateTaskRequested(false)}
+          onSaveTask={saveTask}
+          onDeleteTask={(taskId) =>
+            setState((current) => ({
+              ...current,
+              tasks: current.tasks.filter((task) => task.id !== taskId),
+            }))
+          }
+          onAddTag={addTag}
+          onRenameTag={renameTag}
+          onDeleteTag={deleteTag}
         />
       )}
 
@@ -116,7 +183,7 @@ export default function App() {
           <h2>One booking page (MVP spec)</h2>
           <p className="caption">
             Public link would be /book/{state.bookingPage.slug}. Guest booking confirmations
-            are deferred until Today-view tests. Free slots use timed routines + events.
+            are deferred until Today-view tests. Free slots use all timed tasks and events.
           </p>
           <div className="card">
             <div>
@@ -152,7 +219,7 @@ export default function App() {
           type="button"
           style={{ marginLeft: 8 }}
           onClick={() => {
-            localStorage.removeItem("dayline.v1");
+            localStorage.removeItem(STORAGE_KEY);
             setState(seedState());
           }}
         >

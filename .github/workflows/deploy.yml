@@ -46,6 +46,7 @@ jobs:
       - name: Build
         env:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          BUILD_ID: ${{ github.sha }}
         run: npm run build
 
       - uses: actions/upload-pages-artifact@v3

@@ -225,6 +225,9 @@ export default function App() {
         >
           Reset demo data
         </button>
+        <span className="build-id" title="Deployed build">
+          build {__BUILD_ID__}
+        </span>
       </p>
     </div>
   );

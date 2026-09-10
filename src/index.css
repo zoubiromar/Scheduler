@@ -183,6 +183,13 @@ form.event-form .span-2 {
   font-size: 0.85rem;
 }
 
+.build-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  margin-left: 10px;
+  opacity: 0.75;
+}
+
 .empty {
   color: var(--muted);
   font-size: 0.9rem;

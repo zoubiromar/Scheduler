@@ -135,4 +135,42 @@ describe("availability", () => {
       { startMinutes: 11 * 60 + 30, endMinutes: 12 * 60 },
     ]);
   });
+
+  it("uses a changed occurrence time for booking availability", () => {
+    const busy = busyRangesOnDate(
+      "2026-09-08",
+      [gym],
+      [],
+      [
+        {
+          id: "changed-gym",
+          taskId: gym.id,
+          originalDate: "2026-09-08",
+          date: "2026-09-08",
+          title: gym.title,
+          startTime: "09:30",
+          durationMinutes: 45,
+          tagIds: [],
+        },
+      ],
+    );
+    expect(busy).toEqual([{ startMinutes: 9 * 60 + 30, endMinutes: 10 * 60 + 15 }]);
+  });
+
+  it("ignores untimed one-off items when calculating busy time", () => {
+    const busy = busyRangesOnDate(
+      "2026-09-12",
+      [],
+      [
+        {
+          id: "untimed",
+          title: "Send a care package",
+          date: "2026-09-12",
+          source: "manual",
+          tagIds: [],
+        },
+      ],
+    );
+    expect(busy).toEqual([]);
+  });
 });

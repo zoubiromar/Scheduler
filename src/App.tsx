@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { AppState, CalendarEvent } from "./types";
+import type { AppState, CalendarEvent, TaskOccurrenceOverride } from "./types";
 import { TodayView, shiftIso } from "./TodayView";
 import { TasksView } from "./TasksView";
 import { TagsView } from "./TagsView";
@@ -75,6 +75,31 @@ export default function App() {
     }));
   }
 
+  function saveOccurrenceOverride(override: TaskOccurrenceOverride) {
+    setState((current) => ({
+      ...current,
+      occurrenceOverrides: [
+        ...current.occurrenceOverrides.filter(
+          (entry) =>
+            !(
+              entry.taskId === override.taskId &&
+              entry.originalDate === override.originalDate
+            ),
+        ),
+        override,
+      ],
+    }));
+  }
+
+  function resetOccurrence(taskId: string, originalDate: string) {
+    setState((current) => ({
+      ...current,
+      occurrenceOverrides: current.occurrenceOverrides.filter(
+        (entry) => !(entry.taskId === taskId && entry.originalDate === originalDate),
+      ),
+    }));
+  }
+
   function addTag(tag: Tag) {
     setState((current) => ({ ...current, tags: [...current.tags, tag] }));
   }
@@ -98,6 +123,10 @@ export default function App() {
         ...event,
         tagIds: event.tagIds.filter((id) => id !== tagId),
       })),
+      occurrenceOverrides: current.occurrenceOverrides.map((override) => ({
+        ...override,
+        tagIds: override.tagIds.filter((id) => id !== tagId),
+      })),
     }));
     if (selectedTagId === tagId) setSelectedTagId(null);
   }
@@ -106,7 +135,12 @@ export default function App() {
     const page = state.bookingPage;
     const window = weekdayWindow(page.weeklyHours, date);
     if (!window) return [];
-    const busy = busyRangesOnDate(date, state.tasks, state.events);
+    const busy = busyRangesOnDate(
+      date,
+      state.tasks,
+      state.events,
+      state.occurrenceOverrides,
+    );
     return freeSlots({
       window,
       busy,
@@ -120,10 +154,12 @@ export default function App() {
     for (const tag of state.tags) {
       usage[tag.id] =
         state.tasks.filter((task) => task.tagIds.includes(tag.id)).length +
-        state.events.filter((event) => event.tagIds.includes(tag.id)).length;
+        state.events.filter((event) => event.tagIds.includes(tag.id)).length +
+        state.occurrenceOverrides.filter((override) => override.tagIds.includes(tag.id))
+          .length;
     }
     return usage;
-  }, [state.tags, state.tasks, state.events]);
+  }, [state.tags, state.tasks, state.events, state.occurrenceOverrides]);
 
   return (
     <div>
@@ -166,6 +202,8 @@ export default function App() {
               events: current.events.filter((event) => event.id !== eventId),
             }))
           }
+          onSaveOccurrenceOverride={saveOccurrenceOverride}
+          onResetOccurrence={resetOccurrence}
           onCreateRepeating={() => {
             setCreateTaskRequested(true);
             setTab("tasks");
@@ -204,6 +242,9 @@ export default function App() {
             setState((current) => ({
               ...current,
               tasks: current.tasks.filter((task) => task.id !== taskId),
+              occurrenceOverrides: current.occurrenceOverrides.filter(
+                (override) => override.taskId !== taskId,
+              ),
             }))
           }
         />

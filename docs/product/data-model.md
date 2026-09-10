@@ -32,6 +32,15 @@ A repeating personal pattern with an optional time and user tags.
 Tasks do not copy rows per day. Completions are stored as
 `TaskCompletion { taskId, date }`.
 
+### TaskOccurrenceOverride
+
+A single generated occurrence can diverge without mutating its series. The
+override stores `taskId`, stable `originalDate`, current `date`, and a complete
+snapshot of title, notes, optional time/duration, and tags. `cancelled` removes
+only that occurrence. Moving one suppresses the original date and renders the
+snapshot on its destination date. Removing the parent series also removes its
+overrides.
+
 ### Event
 
 A concrete timed (or all-day) instance: manual, booking, or (later) Google-imported.
@@ -39,7 +48,7 @@ A concrete timed (or all-day) instance: manual, booking, or (later) Google-impor
 | Field | Meaning |
 | --- | --- |
 | `source` | Internal origin (`manual`, `booking`, `google`); not displayed as a category |
-| `date`, `startTime`, `durationMinutes` | When it occupies the grid |
+| `date`, optional `startTime` / `durationMinutes` | Timed events occupy the grid; untimed events join Anytime |
 | `title` | Display name |
 | `tagIds` | User-created visible grouping |
 

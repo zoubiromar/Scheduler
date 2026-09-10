@@ -7,7 +7,7 @@ import {
   startOfWeekMonday,
   todayISO,
 } from "./lib/dates";
-import { occursOn } from "./lib/recurrence";
+import { resolveTaskOccurrences } from "./lib/occurrences";
 import type { AppState } from "./types";
 
 interface WeekViewProps {
@@ -26,6 +26,7 @@ interface WeekViewProps {
 interface BarItem {
   id: string;
   sourceId: string;
+  completionDate?: string;
   kind: "task" | "event";
   title: string;
   startTime: string;
@@ -85,42 +86,47 @@ export function WeekView({
       </div>
       <div className="week-stack">
         {days.map((iso) => {
-          const tasks = state.tasks.filter(
-            (task) =>
-              occursOn(task.recurrence, iso) &&
-              (selectedTagId === null || task.tagIds.includes(selectedTagId)),
+          const occurrences = resolveTaskOccurrences(
+            state.tasks,
+            state.occurrenceOverrides,
+            iso,
+          ).filter(
+            (occurrence) =>
+              selectedTagId === null || occurrence.tagIds.includes(selectedTagId),
           );
-          const doneIds = new Set(
-            state.completions
-              .filter((completion) => completion.date === iso)
-              .map((completion) => completion.taskId),
+          const completionKeys = new Set(
+            state.completions.map(
+              (completion) => `${completion.taskId}:${completion.date}`,
+            ),
           );
           const timed = assignLanes([
-            ...tasks
-              .filter((task) => task.startTime)
-              .map((task) => ({
-                id: `task-${task.id}`,
-                sourceId: task.id,
+            ...occurrences
+              .filter((occurrence) => occurrence.startTime)
+              .map((occurrence) => ({
+                id: `task-${occurrence.key}`,
+                sourceId: occurrence.taskId,
+                completionDate: occurrence.originalDate,
                 kind: "task" as const,
-                title: task.title,
-                startTime: task.startTime!,
-                duration: task.durationMinutes ?? 0,
-                tagIds: task.tagIds,
-                completed: doneIds.has(task.id),
+                title: occurrence.title,
+                startTime: occurrence.startTime!,
+                duration: occurrence.durationMinutes ?? 0,
+                tagIds: occurrence.tagIds,
+                completed: completionKeys.has(occurrence.key),
               })),
           ...state.events
             .filter(
               (event) =>
                 event.date === iso &&
+                event.startTime &&
                 (selectedTagId === null || event.tagIds.includes(selectedTagId)),
             )
             .map((event) => ({
               id: `event-${event.id}`,
               sourceId: event.id,
               kind: "event" as const,
-              startTime: event.startTime,
+              startTime: event.startTime!,
               title: event.title,
-              duration: event.durationMinutes,
+              duration: event.durationMinutes ?? 0,
               tagIds: event.tagIds,
               completed: Boolean(event.completed),
             })),
@@ -130,7 +136,15 @@ export function WeekView({
             return startMinutes >= 480 && startMinutes + item.duration <= 1440;
           });
           const overflow = timed.filter((item) => !inBar.includes(item));
-          const untimed = tasks.filter((task) => !task.startTime);
+          const untimedOccurrences = occurrences.filter(
+            (occurrence) => !occurrence.startTime,
+          );
+          const untimedEvents = state.events.filter(
+            (event) =>
+              event.date === iso &&
+              !event.startTime &&
+              (selectedTagId === null || event.tagIds.includes(selectedTagId)),
+          );
           const lanes = Math.max(1, ...inBar.map((item) => item.lane + 1));
 
           return (
@@ -179,7 +193,7 @@ export function WeekView({
                               checked={item.completed}
                               onChange={() =>
                                 item.kind === "task"
-                                  ? onToggleTask(item.sourceId, iso)
+                                  ? onToggleTask(item.sourceId, item.completionDate!)
                                   : onToggleEvent(item.sourceId)
                               }
                             />
@@ -199,7 +213,7 @@ export function WeekView({
                           checked={item.completed}
                           onChange={() =>
                             item.kind === "task"
-                              ? onToggleTask(item.sourceId, iso)
+                              ? onToggleTask(item.sourceId, item.completionDate!)
                               : onToggleEvent(item.sourceId)
                           }
                         />
@@ -210,19 +224,36 @@ export function WeekView({
                 )}
               </div>
               <div className="untimed-column">
-                {untimed.length === 0 ? (
+                {untimedOccurrences.length === 0 && untimedEvents.length === 0 ? (
                   <span className="empty small">No anytime tasks</span>
                 ) : (
-                  untimed.map((task) => (
-                    <label className={`mini-task${doneIds.has(task.id) ? " done" : ""}`} key={task.id}>
+                  <>
+                  {untimedOccurrences.map((occurrence) => (
+                    <label
+                      className={`mini-task${completionKeys.has(occurrence.key) ? " done" : ""}`}
+                      key={occurrence.key}
+                    >
                       <input
                         type="checkbox"
-                        checked={doneIds.has(task.id)}
-                        onChange={() => onToggleTask(task.id, iso)}
+                        checked={completionKeys.has(occurrence.key)}
+                        onChange={() =>
+                          onToggleTask(occurrence.taskId, occurrence.originalDate)
+                        }
                       />
-                      <span>{task.title}</span>
+                      <span>{occurrence.title}</span>
                     </label>
-                  ))
+                  ))}
+                  {untimedEvents.map((event) => (
+                    <label className={`mini-task${event.completed ? " done" : ""}`} key={event.id}>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(event.completed)}
+                        onChange={() => onToggleEvent(event.id)}
+                      />
+                      <span>{event.title}</span>
+                    </label>
+                  ))}
+                  </>
                 )}
               </div>
             </div>

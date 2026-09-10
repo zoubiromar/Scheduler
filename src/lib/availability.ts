@@ -1,23 +1,28 @@
-import type { CalendarEvent, RepeatingTask, TimeRange } from "../types";
+import type {
+  CalendarEvent,
+  RepeatingTask,
+  TaskOccurrenceOverride,
+  TimeRange,
+} from "../types";
 import { minutesFromTime, timeFromMinutes, weekdayOf } from "./dates";
-import { occursOn } from "./recurrence";
+import { resolveTaskOccurrences } from "./occurrences";
 
 export function busyRangesOnDate(
   date: string,
   tasks: RepeatingTask[],
   events: CalendarEvent[],
+  overrides: TaskOccurrenceOverride[] = [],
 ): TimeRange[] {
   const ranges: TimeRange[] = [];
 
-  for (const task of tasks) {
-    if (!task.startTime || task.durationMinutes == null) continue;
-    if (!occursOn(task.recurrence, date)) continue;
-    const start = minutesFromTime(task.startTime);
-    ranges.push({ startMinutes: start, endMinutes: start + task.durationMinutes });
+  for (const occurrence of resolveTaskOccurrences(tasks, overrides, date)) {
+    if (!occurrence.startTime || occurrence.durationMinutes == null) continue;
+    const start = minutesFromTime(occurrence.startTime);
+    ranges.push({ startMinutes: start, endMinutes: start + occurrence.durationMinutes });
   }
 
   for (const event of events) {
-    if (event.date !== date) continue;
+    if (event.date !== date || !event.startTime || event.durationMinutes == null) continue;
     const start = minutesFromTime(event.startTime);
     ranges.push({ startMinutes: start, endMinutes: start + event.durationMinutes });
   }

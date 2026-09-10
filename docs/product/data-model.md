@@ -8,28 +8,29 @@ All times are stored as local civil dates (`YYYY-MM-DD`) plus optional `HH:mm`. 
 
 Owner of all other records. In this slice there is a single implicit local user.
 
-### RecurrenceRule
+### Recurrence
 
 | Field | Meaning |
 | --- | --- |
-| `frequency` | `daily` or `weekly` |
-| `interval` | Every N days or N weeks |
-| `byWeekday` | `0–6` (Sun–Sat). Required for weekly; ignored for daily |
+| `kind` | `weekdays` or `cycle` |
+| `days` | Calendar weekdays `0–6` for `weekdays` |
+| `length` / `active` | Loop length and selected zero-based positions for `cycle` |
 | `startDate` | Inclusive |
 | `endDate` | Optional inclusive |
-| `count` | Optional max occurrences |
 | `exdates` | Dates to skip |
 
-A date **occurs** if it is on-or-after `startDate`, not excluded, within `endDate`/`count`, and matches the frequency (day-of-week + week interval, or day interval).
+A cycle is anchored on `startDate`: day 1 is position `0`. A 6-day loop
+on days 1, 4, and 5 stores `active: [0, 3, 4]`.
 
-### Routine
+### RepeatingTask
 
-A repeating personal pattern. **Time is optional.**
+A repeating personal pattern with an optional time and user tags.
 
 - With `startTime` + `durationMinutes` → shows on the calendar as generated occurrences.
 - Without time → shows in the Today **routines** list (habit-like), not on the hour grid.
 
-Routines do not copy rows per day. Completions are stored as `RoutineCompletion { routineId, date }`.
+Tasks do not copy rows per day. Completions are stored as
+`TaskCompletion { taskId, date }`.
 
 ### Event
 
@@ -37,17 +38,15 @@ A concrete timed (or all-day) instance: manual, booking, or (later) Google-impor
 
 | Field | Meaning |
 | --- | --- |
-| `source` | `manual` \| `booking` \| `google` |
+| `source` | Internal origin (`manual`, `booking`, `google`); not displayed as a category |
 | `date`, `startTime`, `durationMinutes` | When it occupies the grid |
 | `title` | Display name |
+| `tagIds` | User-created visible grouping |
 
-### ChecklistTemplate + ChecklistItem
+### Tag
 
-Untimed, repeatable work that is **not** a clock block. The template lists items; each calendar day gets a `DailyChecklist` instance with per-item `done` flags.
-
-Reset policy: `daily` (this MVP). Weekly reset can be added without changing item identity.
-
-Optional `carryOver`: incomplete items appear the next day until checked.
+`{ id, name, color }`. Repeating tasks and one-off events can have multiple
+tags. Deleting a tag removes its id from items, never the items themselves.
 
 ### Goal
 
@@ -75,15 +74,16 @@ Guest request that **creates an Event** (`source: booking`) when confirmed.
 
 ```
 User
-  ├── Routine ── RecurrenceRule
-  ├── RoutineCompletion
+  ├── RepeatingTask ── Recurrence
+  ├── TaskCompletion
   ├── Event
-  ├── ChecklistTemplate ── ChecklistItem
-  ├── DailyChecklist (per date)
+  ├── Tag
   ├── Goal
   └── BookingPage ── Booking ── Event
 ```
 
 ## Busy time (for booking)
 
-Busy = timed routine occurrences on that date ∪ events on that date. Free slots = `weeklyHours` minus busy ranges minus buffers, snapped to `durationMinutes`.
+Busy = timed repeating-task occurrences on that date ∪ events on that date.
+Free slots = `weeklyHours` minus busy ranges minus buffers, snapped to
+`durationMinutes`.

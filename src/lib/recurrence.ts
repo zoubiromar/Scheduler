@@ -1,50 +1,27 @@
-import type { RecurrenceRule, Weekday } from "../types";
+import type { Recurrence } from "../types";
 import { addDays, parseISODate, weekdayOf } from "./dates";
 
-function daysBetween(start: string, end: string): number {
+export function daysBetween(start: string, end: string): number {
   const ms = parseISODate(end).getTime() - parseISODate(start).getTime();
   return Math.round(ms / 86_400_000);
 }
 
-function matchesCadence(rule: RecurrenceRule, date: string): boolean {
+export function occursOn(rule: Recurrence, date: string): boolean {
   if (date < rule.startDate) return false;
   if (rule.endDate && date > rule.endDate) return false;
   if (rule.exdates?.includes(date)) return false;
 
-  const interval = Math.max(1, rule.interval);
-
-  if (rule.frequency === "daily") {
-    const diff = daysBetween(rule.startDate, date);
-    return diff >= 0 && diff % interval === 0;
+  if (rule.kind === "weekdays") {
+    return rule.days.includes(weekdayOf(date) as 0 | 1 | 2 | 3 | 4 | 5 | 6);
   }
 
-  const weekdays = rule.byWeekday ?? [];
-  if (!weekdays.includes(weekdayOf(date) as Weekday)) return false;
-  const weekIndex = Math.floor(daysBetween(rule.startDate, date) / 7);
-  return weekIndex >= 0 && weekIndex % interval === 0;
-}
-
-function occurrenceIndex(rule: RecurrenceRule, date: string): number | null {
-  if (!matchesCadence(rule, date)) return null;
-  let index = 0;
-  for (let cursor = rule.startDate; cursor <= date; cursor = addDays(cursor, 1)) {
-    if (matchesCadence(rule, cursor)) {
-      index += 1;
-      if (cursor === date) return index;
-    }
-  }
-  return null;
-}
-
-export function occursOn(rule: RecurrenceRule, date: string): boolean {
-  const index = occurrenceIndex(rule, date);
-  if (index == null) return false;
-  if (rule.count != null && index > rule.count) return false;
-  return true;
+  const length = Math.max(1, rule.length);
+  const position = daysBetween(rule.startDate, date) % length;
+  return rule.active.includes(position);
 }
 
 export function occurrencesInRange(
-  rule: RecurrenceRule,
+  rule: Recurrence,
   from: string,
   to: string,
 ): string[] {

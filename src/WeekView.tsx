@@ -136,6 +136,12 @@ export function WeekView({
             return startMinutes >= 480 && startMinutes + item.duration <= 1440;
           });
           const overflow = timed.filter((item) => !inBar.includes(item));
+          const earlyOverflow = overflow.filter(
+            (item) => minutesFromTime(item.startTime) < 480,
+          );
+          const lateOverflow = overflow.filter(
+            (item) => minutesFromTime(item.startTime) >= 480,
+          );
           const untimedOccurrences = occurrences.filter(
             (occurrence) => !occurrence.startTime,
           );
@@ -154,7 +160,13 @@ export function WeekView({
                 <span>{iso.slice(5)}</span>
               </button>
               <div className="day-schedule">
-                <div className="timeline-bar" style={{ "--lanes": lanes } as React.CSSProperties}>
+                <div
+                  className="timeline-bar"
+                  style={{
+                    "--lanes": lanes,
+                    "--overflow-space": overflow.length > 0 ? "28px" : "0px",
+                  } as React.CSSProperties}
+                >
                   <div className="time-guides" aria-hidden="true" />
                   {inBar.map((item) => {
                     const startMinutes = minutesFromTime(item.startTime);
@@ -203,25 +215,35 @@ export function WeekView({
                       </div>
                     );
                   })}
+                  {overflow.length > 0 && (
+                    <div className="overflow-list">
+                      {[earlyOverflow, lateOverflow].map((items, groupIndex) => (
+                        <div
+                          className={`overflow-edge overflow-edge-${groupIndex === 0 ? "start" : "end"}`}
+                          key={groupIndex === 0 ? "start" : "end"}
+                        >
+                          {items.map((item) => (
+                            <label
+                              className={`overflow-chip${item.completed ? " completed" : ""}`}
+                              key={item.id}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={item.completed}
+                                onChange={() =>
+                                  item.kind === "task"
+                                    ? onToggleTask(item.sourceId, item.completionDate!)
+                                    : onToggleEvent(item.sourceId)
+                                }
+                              />
+                              {formatTime(item.startTime)} · {item.title}
+                            </label>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                {overflow.length > 0 && (
-                  <div className="overflow-list">
-                    {overflow.map((item) => (
-                      <label className={`overflow-chip${item.completed ? " completed" : ""}`} key={item.id}>
-                        <input
-                          type="checkbox"
-                          checked={item.completed}
-                          onChange={() =>
-                            item.kind === "task"
-                              ? onToggleTask(item.sourceId, item.completionDate!)
-                              : onToggleEvent(item.sourceId)
-                          }
-                        />
-                        {formatTime(item.startTime)} · {item.title}
-                      </label>
-                    ))}
-                  </div>
-                )}
               </div>
               <div className="untimed-column">
                 {untimedOccurrences.length === 0 && untimedEvents.length === 0 ? (

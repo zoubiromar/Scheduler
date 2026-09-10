@@ -11,6 +11,7 @@ interface TodayViewProps {
   selectedTagId: string | null;
   onFilterChange: (tagId: string | null) => void;
   onToggleTask: (taskId: string, date: string) => void;
+  onToggleEvent: (eventId: string) => void;
   onSaveEvent: (event: CalendarEvent) => void;
   onDeleteEvent: (eventId: string) => void;
   onCreateRepeating: () => void;
@@ -23,6 +24,7 @@ export function TodayView({
   selectedTagId,
   onFilterChange,
   onToggleTask,
+  onToggleEvent,
   onSaveEvent,
   onDeleteEvent,
   onCreateRepeating,
@@ -45,6 +47,12 @@ export function TodayView({
       event.date === date &&
       (selectedTagId === null || event.tagIds.includes(selectedTagId)),
   );
+  const allTasksToday = state.tasks.filter((task) => occursOn(task.recurrence, date));
+  const doneIds = new Set(
+    state.completions
+      .filter((completion) => completion.date === date)
+      .map((completion) => completion.taskId),
+  );
   const timeline = [
     ...timedTasks.map((task) => ({
       kind: "task" as const,
@@ -53,6 +61,7 @@ export function TodayView({
       duration: task.durationMinutes ?? 0,
       title: task.title,
       tagIds: task.tagIds,
+      completed: doneIds.has(task.id),
     })),
     ...events.map((event) => ({
       kind: "event" as const,
@@ -61,15 +70,10 @@ export function TodayView({
       duration: event.durationMinutes,
       title: event.title,
       tagIds: event.tagIds,
+      completed: Boolean(event.completed),
     })),
   ].sort((a, b) => a.time.localeCompare(b.time));
 
-  const allTasksToday = state.tasks.filter((task) => occursOn(task.recurrence, date));
-  const doneIds = new Set(
-    state.completions
-      .filter((completion) => completion.date === date)
-      .map((completion) => completion.taskId),
-  );
   const done = allTasksToday.filter((task) => doneIds.has(task.id)).length;
   const percent = allTasksToday.length === 0 ? 0 : Math.round((done / allTasksToday.length) * 100);
 
@@ -87,6 +91,7 @@ export function TodayView({
       durationMinutes: Number(data.get("durationMinutes") ?? 60),
       source: editingEvent?.source ?? "manual",
       tagIds: data.getAll("tagIds").map(String),
+      completed: editingEvent?.completed ?? false,
     });
     setEditingEventId(null);
     form.reset();
@@ -139,15 +144,15 @@ export function TodayView({
           <p className="empty">Nothing timed. Add an event below.</p>
         ) : (
           timeline.map((item) => (
-            <div className={`card${item.kind === "task" && doneIds.has(item.id) ? " completed" : ""}`} key={`${item.kind}-${item.id}`}>
-              {item.kind === "task" && (
-                <button
-                  className={`check${doneIds.has(item.id) ? " on" : ""}`}
-                  type="button"
-                  aria-label={`Toggle ${item.title}`}
-                  onClick={() => onToggleTask(item.id, date)}
-                />
-              )}
+            <div className={`card${item.completed ? " completed" : ""}`} key={`${item.kind}-${item.id}`}>
+              <button
+                className={`check${item.completed ? " on" : ""}`}
+                type="button"
+                aria-label={`Mark ${item.title} ${item.completed ? "incomplete" : "complete"}`}
+                onClick={() =>
+                  item.kind === "task" ? onToggleTask(item.id, date) : onToggleEvent(item.id)
+                }
+              />
               <div className="time">{formatTime(item.time)}</div>
               <div className="card-content">
                 <div>{item.title}</div>

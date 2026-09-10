@@ -16,16 +16,22 @@ interface WeekViewProps {
   selectedTagId: string | null;
   onFilterChange: (tagId: string | null) => void;
   onToggleTask: (taskId: string, date: string) => void;
+  onToggleEvent: (eventId: string) => void;
+  fullWidth: boolean;
+  onFullWidthChange: (value: boolean) => void;
   onShiftWeek: (delta: number) => void;
   onSelectDate: (iso: string) => void;
 }
 
 interface BarItem {
   id: string;
+  sourceId: string;
+  kind: "task" | "event";
   title: string;
   startTime: string;
   duration: number;
   tagIds: string[];
+  completed: boolean;
   lane: number;
 }
 
@@ -48,6 +54,9 @@ export function WeekView({
   selectedTagId,
   onFilterChange,
   onToggleTask,
+  onToggleEvent,
+  fullWidth,
+  onFullWidthChange,
   onShiftWeek,
   onSelectDate,
 }: WeekViewProps) {
@@ -56,11 +65,19 @@ export function WeekView({
   const today = todayISO();
 
   return (
-    <div>
+    <div className={`week-view${fullWidth ? " full-width" : ""}`}>
       <div className="week-toolbar">
         <button className="ghost" type="button" onClick={() => onShiftWeek(-1)}>Previous week</button>
         <strong>{start} — {days[6]}</strong>
         <button className="ghost" type="button" onClick={() => onShiftWeek(1)}>Next week</button>
+        <label className="width-toggle">
+          <input
+            type="checkbox"
+            checked={fullWidth}
+            onChange={(event) => onFullWidthChange(event.target.checked)}
+          />
+          <span>Full width</span>
+        </label>
       </div>
       <TagFilter tags={state.tags} selectedId={selectedTagId} onChange={onFilterChange} />
       <div className="week-hours" aria-hidden="true">
@@ -73,15 +90,23 @@ export function WeekView({
               occursOn(task.recurrence, iso) &&
               (selectedTagId === null || task.tagIds.includes(selectedTagId)),
           );
+          const doneIds = new Set(
+            state.completions
+              .filter((completion) => completion.date === iso)
+              .map((completion) => completion.taskId),
+          );
           const timed = assignLanes([
             ...tasks
               .filter((task) => task.startTime)
               .map((task) => ({
                 id: `task-${task.id}`,
+                sourceId: task.id,
+                kind: "task" as const,
                 title: task.title,
                 startTime: task.startTime!,
                 duration: task.durationMinutes ?? 0,
                 tagIds: task.tagIds,
+                completed: doneIds.has(task.id),
               })),
           ...state.events
             .filter(
@@ -91,10 +116,13 @@ export function WeekView({
             )
             .map((event) => ({
               id: `event-${event.id}`,
+              sourceId: event.id,
+              kind: "event" as const,
               startTime: event.startTime,
               title: event.title,
               duration: event.durationMinutes,
               tagIds: event.tagIds,
+              completed: Boolean(event.completed),
             })),
           ]);
           const inBar = timed.filter((item) => {
@@ -103,11 +131,6 @@ export function WeekView({
           });
           const overflow = timed.filter((item) => !inBar.includes(item));
           const untimed = tasks.filter((task) => !task.startTime);
-          const doneIds = new Set(
-            state.completions
-              .filter((completion) => completion.date === iso)
-              .map((completion) => completion.taskId),
-          );
           const lanes = Math.max(1, ...inBar.map((item) => item.lane + 1));
 
           return (
@@ -127,9 +150,10 @@ export function WeekView({
                       state.tags.find((tag) => item.tagIds.includes(tag.id))?.color ?? "#6b6258";
                     return (
                       <div
-                        className="timeline-item"
+                        className={`timeline-item${item.completed ? " completed" : ""}`}
                         key={item.id}
                         title={`${formatTime(item.startTime)} · ${item.title} · ${item.duration} min`}
+                        tabIndex={0}
                         style={{
                           left: `${left}%`,
                           width: `${Math.min(width, 100 - left)}%`,
@@ -138,6 +162,30 @@ export function WeekView({
                         } as React.CSSProperties}
                       >
                         <strong>{item.title}</strong>
+                        <span className="timeline-tooltip" role="tooltip">
+                          <strong>{item.title}</strong>
+                          <span>{formatTime(item.startTime)} · {item.duration} min</span>
+                          {item.tagIds.length > 0 && (
+                            <span>
+                              {item.tagIds
+                                .map((id) => state.tags.find((tag) => tag.id === id)?.name)
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </span>
+                          )}
+                          <label>
+                            <input
+                              type="checkbox"
+                              checked={item.completed}
+                              onChange={() =>
+                                item.kind === "task"
+                                  ? onToggleTask(item.sourceId, iso)
+                                  : onToggleEvent(item.sourceId)
+                              }
+                            />
+                            Completed
+                          </label>
+                        </span>
                       </div>
                     );
                   })}
@@ -145,9 +193,18 @@ export function WeekView({
                 {overflow.length > 0 && (
                   <div className="overflow-list">
                     {overflow.map((item) => (
-                      <span className="overflow-chip" key={item.id}>
+                      <label className={`overflow-chip${item.completed ? " completed" : ""}`} key={item.id}>
+                        <input
+                          type="checkbox"
+                          checked={item.completed}
+                          onChange={() =>
+                            item.kind === "task"
+                              ? onToggleTask(item.sourceId, iso)
+                              : onToggleEvent(item.sourceId)
+                          }
+                        />
                         {formatTime(item.startTime)} · {item.title}
-                      </span>
+                      </label>
                     ))}
                   </div>
                 )}

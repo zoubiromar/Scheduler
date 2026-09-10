@@ -44,6 +44,7 @@ export interface CalendarEvent {
   durationMinutes: number;
   source: EventSource;
   tagIds: string[];
+  completed?: boolean;
 }
 
 export interface Tag {

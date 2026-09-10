@@ -4,17 +4,12 @@ import { formatShortDate, formatTime } from "./lib/dates";
 import type { RepeatingTask, Tag } from "./types";
 
 const WEEKDAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const TAG_COLORS = ["#3f6b58", "#c45c3e", "#7067a8", "#247b7b", "#b07d2b", "#a44a6f"];
-
 interface TasksViewProps {
   tasks: RepeatingTask[];
   tags: Tag[];
   startCreating?: boolean;
   onSaveTask: (task: RepeatingTask) => void;
   onDeleteTask: (taskId: string) => void;
-  onAddTag: (tag: Tag) => void;
-  onRenameTag: (tagId: string, name: string) => void;
-  onDeleteTag: (tagId: string) => void;
   onEditorClosed: () => void;
 }
 
@@ -35,14 +30,10 @@ export function TasksView({
   startCreating,
   onSaveTask,
   onDeleteTask,
-  onAddTag,
-  onRenameTag,
-  onDeleteTag,
   onEditorClosed,
 }: TasksViewProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(Boolean(startCreating));
-  const [tagName, setTagName] = useState("");
 
   const editing = tasks.find((task) => task.id === editingId);
 
@@ -75,17 +66,6 @@ export function TasksView({
     );
   }
 
-  function createTag() {
-    const name = tagName.trim();
-    if (!name) return;
-    onAddTag({
-      id: crypto.randomUUID(),
-      name,
-      color: TAG_COLORS[tags.length % TAG_COLORS.length],
-    });
-    setTagName("");
-  }
-
   return (
     <div>
       <div className="section-heading">
@@ -116,37 +96,6 @@ export function TasksView({
         ))}
       </div>
 
-      <section className="tag-manager">
-        <h2>Manage tags</h2>
-        <div className="tag-manager-list">
-          {tags.map((tag) => (
-            <div className="tag-manager-row" key={tag.id}>
-              <span className="tag-dot" style={{ background: tag.color }} />
-              <input
-                aria-label={`Rename ${tag.name}`}
-                value={tag.name}
-                onChange={(event) => onRenameTag(tag.id, event.target.value)}
-              />
-              <button className="ghost" type="button" onClick={() => onDeleteTag(tag.id)}>
-                Delete
-              </button>
-            </div>
-          ))}
-        </div>
-        <div className="inline-form">
-          <input
-            value={tagName}
-            placeholder="New tag name"
-            onChange={(event) => setTagName(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") createTag();
-            }}
-          />
-          <button className="ghost" type="button" onClick={createTag}>
-            Add tag
-          </button>
-        </div>
-      </section>
     </div>
   );
 }

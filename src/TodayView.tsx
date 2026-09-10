@@ -19,6 +19,7 @@ interface TodayViewProps {
   onSaveOccurrenceOverride: (override: TaskOccurrenceOverride) => void;
   onResetOccurrence: (taskId: string, originalDate: string) => void;
   onCreateRepeating: () => void;
+  onCreateTag: (tag: AppState["tags"][number]) => void;
   onShiftDate: (delta: number) => void;
 }
 
@@ -34,10 +35,12 @@ export function TodayView({
   onSaveOccurrenceOverride,
   onResetOccurrence,
   onCreateRepeating,
+  onCreateTag,
   onShiftDate,
 }: TodayViewProps) {
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [editingOccurrenceKey, setEditingOccurrenceKey] = useState<string | null>(null);
+  const [addingEvent, setAddingEvent] = useState(false);
   const occurrencesToday = useMemo(
     () =>
       resolveTaskOccurrences(state.tasks, state.occurrenceOverrides, date).filter(
@@ -96,13 +99,20 @@ export function TodayView({
     (occurrence) => occurrence.key === editingOccurrenceKey,
   );
 
+  function shiftDate(delta: number) {
+    setEditingEventId(null);
+    setEditingOccurrenceKey(null);
+    setAddingEvent(false);
+    onShiftDate(delta);
+  }
+
   return (
     <div>
       <div className="date-row">
-        <button className="ghost" type="button" onClick={() => onShiftDate(-1)}>Previous</button>
+        <button className="ghost" type="button" onClick={() => shiftDate(-1)}>Previous</button>
         <strong>{formatDisplayDate(date)}</strong>
-        <button className="ghost" type="button" onClick={() => onShiftDate(1)}>Next</button>
-        <button className="ghost" type="button" onClick={() => onShiftDate(0)}>Today</button>
+        <button className="ghost" type="button" onClick={() => shiftDate(1)}>Next</button>
+        <button className="ghost" type="button" onClick={() => shiftDate(0)}>Today</button>
       </div>
 
       <TagFilter tags={state.tags} selectedId={selectedTagId} onChange={onFilterChange} />
@@ -116,6 +126,7 @@ export function TodayView({
           key={editingOccurrence.key}
           occurrence={editingOccurrence}
           tags={state.tags}
+          onCreateTag={onCreateTag}
           onCancel={() => setEditingOccurrenceKey(null)}
           onSave={(override) => {
             onSaveOccurrenceOverride(override);
@@ -138,6 +149,7 @@ export function TodayView({
           date={date}
           event={editingEvent}
           tags={state.tags}
+          onCreateTag={onCreateTag}
           onCancel={() => setEditingEventId(null)}
           onSave={(event) => {
             onSaveEvent(event);
@@ -153,7 +165,22 @@ export function TodayView({
       <section>
         <div className="section-heading compact">
           <h2>Anytime</h2>
-          <button className="ghost" type="button" onClick={onCreateRepeating}>New repeating task</button>
+          <div className="section-actions">
+            <button
+              className="ghost"
+              type="button"
+              onClick={() => {
+                setEditingEventId(null);
+                setEditingOccurrenceKey(null);
+                setAddingEvent(true);
+              }}
+            >
+              New one-time item
+            </button>
+            <button className="ghost" type="button" onClick={onCreateRepeating}>
+              New repeating task
+            </button>
+          </div>
         </div>
         {untimedOccurrences.length === 0 && untimedEvents.length === 0 ? (
           <p className="empty">No untimed tasks match this day and filter.</p>
@@ -178,9 +205,12 @@ export function TodayView({
               <button
                 className="ghost card-action"
                 type="button"
-                onClick={() => setEditingOccurrenceKey(occurrence.key)}
+                onClick={() => {
+                  setAddingEvent(false);
+                  setEditingOccurrenceKey(occurrence.key);
+                }}
               >
-                Edit today
+                Edit
               </button>
             </div>
           ))}
@@ -196,7 +226,14 @@ export function TodayView({
                 <div>{event.title}</div>
                 <TagList ids={event.tagIds} state={state} />
               </div>
-              <button className="ghost card-action" type="button" onClick={() => setEditingEventId(event.id)}>
+              <button
+                className="ghost card-action"
+                type="button"
+                onClick={() => {
+                  setAddingEvent(false);
+                  setEditingEventId(event.id);
+                }}
+              >
                 Edit
               </button>
             </div>
@@ -231,25 +268,33 @@ export function TodayView({
               <button
                 className="ghost card-action"
                 type="button"
-                onClick={() =>
-                  item.kind === "task"
-                    ? setEditingOccurrenceKey(item.occurrence.key)
-                    : setEditingEventId(item.id)
-                }
+                onClick={() => {
+                  setAddingEvent(false);
+                  if (item.kind === "task") {
+                    setEditingOccurrenceKey(item.occurrence.key);
+                  } else {
+                    setEditingEventId(item.id);
+                  }
+                }}
               >
-                {item.kind === "task" ? "Edit today" : "Edit"}
+                Edit
               </button>
             </div>
           ))
         )}
       </section>
 
-      {!editingEvent && !editingOccurrence && (
+      {!editingEvent && !editingOccurrence && addingEvent && (
         <EventEditor
           key={`new-${date}`}
           date={date}
           tags={state.tags}
-          onSave={onSaveEvent}
+          onCreateTag={onCreateTag}
+          onCancel={() => setAddingEvent(false)}
+          onSave={(event) => {
+            onSaveEvent(event);
+            setAddingEvent(false);
+          }}
         />
       )}
     </div>

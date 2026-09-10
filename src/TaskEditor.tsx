@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { RecurrenceBoxes } from "./RecurrenceBoxes";
+import { TagChoices } from "./TagChoices";
 import { todayISO } from "./lib/dates";
 import type { Recurrence, RepeatingTask, Tag } from "./types";
 
@@ -9,9 +10,17 @@ interface TaskEditorProps {
   onSave: (task: RepeatingTask) => void;
   onCancel: () => void;
   onDelete?: (taskId: string) => void;
+  onCreateTag: (tag: Tag) => void;
 }
 
-export function TaskEditor({ task, tags, onSave, onCancel, onDelete }: TaskEditorProps) {
+export function TaskEditor({
+  task,
+  tags,
+  onSave,
+  onCancel,
+  onDelete,
+  onCreateTag,
+}: TaskEditorProps) {
   const [title, setTitle] = useState(task?.title ?? "");
   const [notes, setNotes] = useState(task?.notes ?? "");
   const [timed, setTimed] = useState(Boolean(task?.startTime));
@@ -140,28 +149,12 @@ export function TaskEditor({ task, tags, onSave, onCancel, onDelete }: TaskEdito
       {endMissing && <p className="form-error">Choose an end date or turn Ends off.</p>}
       {endInvalid && <p className="form-error">End date cannot be before the start date.</p>}
 
-      <fieldset className="tag-picker">
-        <legend>Tags</legend>
-        <div className="tag-list">
-          {tags.map((tag) => (
-            <button
-              type="button"
-              className={`tag-chip${tagIds.includes(tag.id) ? " selected" : ""}`}
-              style={{ "--tag-color": tag.color } as React.CSSProperties}
-              key={tag.id}
-              onClick={() =>
-                setTagIds((current) =>
-                  current.includes(tag.id)
-                    ? current.filter((id) => id !== tag.id)
-                    : [...current, tag.id],
-                )
-              }
-            >
-              {tag.name}
-            </button>
-          ))}
-        </div>
-      </fieldset>
+      <TagChoices
+        tags={tags}
+        selected={tagIds}
+        onChange={setTagIds}
+        onCreateTag={onCreateTag}
+      />
 
       {task && (
         <div className="skip-row">

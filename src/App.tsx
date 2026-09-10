@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import type { AppState, CalendarEvent } from "./types";
 import { TodayView, shiftIso } from "./TodayView";
 import { TasksView } from "./TasksView";
+import { TagsView } from "./TagsView";
 import { WeekView } from "./WeekView";
 import { loadState, saveState, seedState, STORAGE_KEY } from "./lib/storage";
 import { addDays, todayISO } from "./lib/dates";
 import { busyRangesOnDate, formatSlot, freeSlots, weekdayWindow } from "./lib/availability";
 import type { RepeatingTask, Tag } from "./types";
 
-type Tab = "today" | "week" | "tasks" | "book";
+type Tab = "today" | "week" | "tasks" | "tags" | "book";
 
 export default function App() {
   const [state, setState] = useState<AppState>(() => loadState());
@@ -16,10 +17,17 @@ export default function App() {
   const [tab, setTab] = useState<Tab>("today");
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
   const [createTaskRequested, setCreateTaskRequested] = useState(false);
+  const [weekFullWidth, setWeekFullWidth] = useState(
+    () => localStorage.getItem("dayline.weekFullWidth") === "true",
+  );
 
   useEffect(() => {
     saveState(state);
   }, [state]);
+
+  useEffect(() => {
+    localStorage.setItem("dayline.weekFullWidth", String(weekFullWidth));
+  }, [weekFullWidth]);
 
   const today = todayISO();
 
@@ -51,6 +59,15 @@ export default function App() {
     }));
   }
 
+  function toggleEvent(eventId: string) {
+    setState((current) => ({
+      ...current,
+      events: current.events.map((event) =>
+        event.id === eventId ? { ...event, completed: !event.completed } : event,
+      ),
+    }));
+  }
+
   function saveTask(task: RepeatingTask) {
     setState((current) => ({
       ...current,
@@ -62,10 +79,10 @@ export default function App() {
     setState((current) => ({ ...current, tags: [...current.tags, tag] }));
   }
 
-  function renameTag(tagId: string, name: string) {
+  function updateTag(tagId: string, patch: Partial<Pick<Tag, "name" | "color">>) {
     setState((current) => ({
       ...current,
-      tags: current.tags.map((tag) => (tag.id === tagId ? { ...tag, name } : tag)),
+      tags: current.tags.map((tag) => (tag.id === tagId ? { ...tag, ...patch } : tag)),
     }));
   }
 
@@ -98,6 +115,16 @@ export default function App() {
     });
   }, [state, date]);
 
+  const tagUsage = useMemo(() => {
+    const usage: Record<string, number> = {};
+    for (const tag of state.tags) {
+      usage[tag.id] =
+        state.tasks.filter((task) => task.tagIds.includes(tag.id)).length +
+        state.events.filter((event) => event.tagIds.includes(tag.id)).length;
+    }
+    return usage;
+  }, [state.tags, state.tasks, state.events]);
+
   return (
     <div>
       <header className="app-header">
@@ -115,6 +142,9 @@ export default function App() {
           <button className={tab === "tasks" ? "active" : ""} type="button" onClick={() => setTab("tasks")}>
             Tasks
           </button>
+          <button className={tab === "tags" ? "active" : ""} type="button" onClick={() => setTab("tags")}>
+            Tags
+          </button>
           <button className={tab === "book" ? "active" : ""} type="button" onClick={() => setTab("book")}>
             Booking
           </button>
@@ -128,6 +158,7 @@ export default function App() {
           selectedTagId={selectedTagId}
           onFilterChange={setSelectedTagId}
           onToggleTask={toggleTask}
+          onToggleEvent={toggleEvent}
           onSaveEvent={saveEvent}
           onDeleteEvent={(eventId) =>
             setState((current) => ({
@@ -150,6 +181,9 @@ export default function App() {
           selectedTagId={selectedTagId}
           onFilterChange={setSelectedTagId}
           onToggleTask={toggleTask}
+          onToggleEvent={toggleEvent}
+          fullWidth={weekFullWidth}
+          onFullWidthChange={setWeekFullWidth}
           onShiftWeek={(delta) => setDate(addDays(date, delta * 7))}
           onSelectDate={(iso) => {
             setDate(iso);
@@ -172,9 +206,16 @@ export default function App() {
               tasks: current.tasks.filter((task) => task.id !== taskId),
             }))
           }
-          onAddTag={addTag}
-          onRenameTag={renameTag}
-          onDeleteTag={deleteTag}
+        />
+      )}
+
+      {tab === "tags" && (
+        <TagsView
+          tags={state.tags}
+          usage={tagUsage}
+          onAdd={addTag}
+          onUpdate={updateTag}
+          onDelete={deleteTag}
         />
       )}
 

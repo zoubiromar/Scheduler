@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
+import { EventEditor } from "./EventEditor";
+import { OccurrenceEditor } from "./OccurrenceEditor";
 import { TagFilter } from "./TagFilter";
 import { TagPill } from "./TasksView";
-import { addDays, formatDisplayDate, formatShortDate, formatTime } from "./lib/dates";
-import { occursOn } from "./lib/recurrence";
-import type { AppState, CalendarEvent } from "./types";
+import { addDays, formatDisplayDate, formatTime } from "./lib/dates";
+import { resolveTaskOccurrences } from "./lib/occurrences";
+import type { AppState, CalendarEvent, TaskOccurrenceOverride } from "./types";
 
 interface TodayViewProps {
   date: string;
@@ -14,6 +16,8 @@ interface TodayViewProps {
   onToggleEvent: (eventId: string) => void;
   onSaveEvent: (event: CalendarEvent) => void;
   onDeleteEvent: (eventId: string) => void;
+  onSaveOccurrenceOverride: (override: TaskOccurrenceOverride) => void;
+  onResetOccurrence: (taskId: string, originalDate: string) => void;
   onCreateRepeating: () => void;
   onShiftDate: (delta: number) => void;
 }
@@ -27,75 +31,70 @@ export function TodayView({
   onToggleEvent,
   onSaveEvent,
   onDeleteEvent,
+  onSaveOccurrenceOverride,
+  onResetOccurrence,
   onCreateRepeating,
   onShiftDate,
 }: TodayViewProps) {
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
-  const tasksToday = useMemo(
+  const [editingOccurrenceKey, setEditingOccurrenceKey] = useState<string | null>(null);
+  const occurrencesToday = useMemo(
     () =>
-      state.tasks.filter(
-        (task) =>
-          occursOn(task.recurrence, date) &&
-          (selectedTagId === null || task.tagIds.includes(selectedTagId)),
+      resolveTaskOccurrences(state.tasks, state.occurrenceOverrides, date).filter(
+        (occurrence) =>
+          selectedTagId === null || occurrence.tagIds.includes(selectedTagId),
       ),
-    [state.tasks, date, selectedTagId],
+    [state.tasks, state.occurrenceOverrides, date, selectedTagId],
   );
-  const untimed = tasksToday.filter((task) => !task.startTime);
-  const timedTasks = tasksToday.filter((task) => task.startTime);
+  const allOccurrencesToday = useMemo(
+    () => resolveTaskOccurrences(state.tasks, state.occurrenceOverrides, date),
+    [state.tasks, state.occurrenceOverrides, date],
+  );
+  const untimedOccurrences = occurrencesToday.filter((occurrence) => !occurrence.startTime);
+  const timedOccurrences = occurrencesToday.filter((occurrence) => occurrence.startTime);
   const events = state.events.filter(
     (event) =>
       event.date === date &&
       (selectedTagId === null || event.tagIds.includes(selectedTagId)),
   );
-  const allTasksToday = state.tasks.filter((task) => occursOn(task.recurrence, date));
-  const doneIds = new Set(
-    state.completions
-      .filter((completion) => completion.date === date)
-      .map((completion) => completion.taskId),
+  const untimedEvents = events.filter((event) => !event.startTime);
+  const timedEvents = events.filter((event) => event.startTime);
+  const completionKeys = new Set(
+    state.completions.map((completion) => `${completion.taskId}:${completion.date}`),
   );
   const timeline = [
-    ...timedTasks.map((task) => ({
+    ...timedOccurrences.map((occurrence) => ({
       kind: "task" as const,
-      id: task.id,
-      time: task.startTime!,
-      duration: task.durationMinutes ?? 0,
-      title: task.title,
-      tagIds: task.tagIds,
-      completed: doneIds.has(task.id),
+      id: occurrence.key,
+      occurrence,
+      time: occurrence.startTime!,
+      duration: occurrence.durationMinutes ?? 0,
+      title: occurrence.title,
+      tagIds: occurrence.tagIds,
+      completed: completionKeys.has(occurrence.key),
     })),
-    ...events.map((event) => ({
+    ...timedEvents.map((event) => ({
       kind: "event" as const,
       id: event.id,
-      time: event.startTime,
-      duration: event.durationMinutes,
+      event,
+      time: event.startTime!,
+      duration: event.durationMinutes ?? 0,
       title: event.title,
       tagIds: event.tagIds,
       completed: Boolean(event.completed),
     })),
   ].sort((a, b) => a.time.localeCompare(b.time));
 
-  const done = allTasksToday.filter((task) => doneIds.has(task.id)).length;
-  const percent = allTasksToday.length === 0 ? 0 : Math.round((done / allTasksToday.length) * 100);
+  const done = allOccurrencesToday.filter((occurrence) =>
+    completionKeys.has(occurrence.key),
+  ).length;
+  const percent =
+    allOccurrencesToday.length === 0 ? 0 : Math.round((done / allOccurrencesToday.length) * 100);
 
   const editingEvent = state.events.find((event) => event.id === editingEventId);
-
-  function saveEvent(form: HTMLFormElement) {
-    const data = new FormData(form);
-    const title = String(data.get("title") ?? "").trim();
-    if (!title) return;
-    onSaveEvent({
-      id: editingEvent?.id ?? crypto.randomUUID(),
-      title,
-      date,
-      startTime: String(data.get("startTime") ?? "09:00"),
-      durationMinutes: Number(data.get("durationMinutes") ?? 60),
-      source: editingEvent?.source ?? "manual",
-      tagIds: data.getAll("tagIds").map(String),
-      completed: editingEvent?.completed ?? false,
-    });
-    setEditingEventId(null);
-    form.reset();
-  }
+  const editingOccurrence = allOccurrencesToday.find(
+    (occurrence) => occurrence.key === editingOccurrenceKey,
+  );
 
   return (
     <div>
@@ -110,31 +109,99 @@ export function TodayView({
       <div className="progress-track" aria-label={`${percent} percent complete`}>
         <span style={{ width: `${percent}%` }} />
       </div>
-      <p className="caption">{done} of {allTasksToday.length} repeating tasks done today</p>
+      <p className="caption">{done} of {allOccurrencesToday.length} repeating tasks done today</p>
+
+      {editingOccurrence && (
+        <OccurrenceEditor
+          key={editingOccurrence.key}
+          occurrence={editingOccurrence}
+          tags={state.tags}
+          onCancel={() => setEditingOccurrenceKey(null)}
+          onSave={(override) => {
+            onSaveOccurrenceOverride(override);
+            setEditingOccurrenceKey(null);
+          }}
+          onRemove={(override) => {
+            onSaveOccurrenceOverride(override);
+            setEditingOccurrenceKey(null);
+          }}
+          onReset={(taskId, originalDate) => {
+            onResetOccurrence(taskId, originalDate);
+            setEditingOccurrenceKey(null);
+          }}
+        />
+      )}
+
+      {editingEvent && (
+        <EventEditor
+          key={editingEvent.id}
+          date={date}
+          event={editingEvent}
+          tags={state.tags}
+          onCancel={() => setEditingEventId(null)}
+          onSave={(event) => {
+            onSaveEvent(event);
+            setEditingEventId(null);
+          }}
+          onDelete={(eventId) => {
+            onDeleteEvent(eventId);
+            setEditingEventId(null);
+          }}
+        />
+      )}
 
       <section>
         <div className="section-heading compact">
           <h2>Anytime</h2>
           <button className="ghost" type="button" onClick={onCreateRepeating}>New repeating task</button>
         </div>
-        {untimed.length === 0 ? (
+        {untimedOccurrences.length === 0 && untimedEvents.length === 0 ? (
           <p className="empty">No untimed tasks match this day and filter.</p>
         ) : (
-          untimed.map((task) => (
-            <div className={`card${doneIds.has(task.id) ? " completed" : ""}`} key={task.id}>
+          <>
+          {untimedOccurrences.map((occurrence) => (
+            <div
+              className={`card${completionKeys.has(occurrence.key) ? " completed" : ""}`}
+              key={occurrence.key}
+            >
               <button
-                className={`check${doneIds.has(task.id) ? " on" : ""}`}
+                className={`check${completionKeys.has(occurrence.key) ? " on" : ""}`}
                 type="button"
-                aria-label={`Toggle ${task.title}`}
-                onClick={() => onToggleTask(task.id, date)}
+                aria-label={`Toggle ${occurrence.title}`}
+                onClick={() => onToggleTask(occurrence.taskId, occurrence.originalDate)}
               />
               <div className="card-content">
-                <div>{task.title}</div>
-                {task.notes && <div className="meta">{task.notes}</div>}
-                <TagList ids={task.tagIds} state={state} />
+                <div>{occurrence.title}</div>
+                {occurrence.notes && <div className="meta">{occurrence.notes}</div>}
+                <TagList ids={occurrence.tagIds} state={state} />
               </div>
+              <button
+                className="ghost card-action"
+                type="button"
+                onClick={() => setEditingOccurrenceKey(occurrence.key)}
+              >
+                Edit today
+              </button>
             </div>
-          ))
+          ))}
+          {untimedEvents.map((event) => (
+            <div className={`card${event.completed ? " completed" : ""}`} key={event.id}>
+              <button
+                className={`check${event.completed ? " on" : ""}`}
+                type="button"
+                aria-label={`Toggle ${event.title}`}
+                onClick={() => onToggleEvent(event.id)}
+              />
+              <div className="card-content">
+                <div>{event.title}</div>
+                <TagList ids={event.tagIds} state={state} />
+              </div>
+              <button className="ghost card-action" type="button" onClick={() => setEditingEventId(event.id)}>
+                Edit
+              </button>
+            </div>
+          ))}
+          </>
         )}
       </section>
 
@@ -150,7 +217,9 @@ export function TodayView({
                 type="button"
                 aria-label={`Mark ${item.title} ${item.completed ? "incomplete" : "complete"}`}
                 onClick={() =>
-                  item.kind === "task" ? onToggleTask(item.id, date) : onToggleEvent(item.id)
+                  item.kind === "task"
+                    ? onToggleTask(item.occurrence.taskId, item.occurrence.originalDate)
+                    : onToggleEvent(item.id)
                 }
               />
               <div className="time">{formatTime(item.time)}</div>
@@ -159,62 +228,30 @@ export function TodayView({
                 <div className="meta">{item.duration} min</div>
                 <TagList ids={item.tagIds} state={state} />
               </div>
-              {item.kind === "event" && (
-                <button className="ghost card-action" type="button" onClick={() => setEditingEventId(item.id)}>
-                  Edit
-                </button>
-              )}
+              <button
+                className="ghost card-action"
+                type="button"
+                onClick={() =>
+                  item.kind === "task"
+                    ? setEditingOccurrenceKey(item.occurrence.key)
+                    : setEditingEventId(item.id)
+                }
+              >
+                {item.kind === "task" ? "Edit today" : "Edit"}
+              </button>
             </div>
           ))
         )}
       </section>
 
-      <form
-        className="event-form"
-        key={editingEvent?.id ?? "new-event"}
-        onSubmit={(event) => {
-          event.preventDefault();
-          saveEvent(event.currentTarget);
-        }}
-      >
-        <div className="form-title span-2">
-          <strong>{editingEvent ? "Edit one-time event" : "Add a one-time event"}</strong>
-          {editingEvent && (
-            <button className="ghost" type="button" onClick={() => setEditingEventId(null)}>Cancel</button>
-          )}
-        </div>
-        <input className="span-2" name="title" placeholder="Event name" defaultValue={editingEvent?.title} required />
-        <input name="startTime" type="time" defaultValue={editingEvent?.startTime ?? "15:00"} />
-        <input name="durationMinutes" type="number" min={5} step={5} defaultValue={editingEvent?.durationMinutes ?? 60} />
-        <div className="tag-checks span-2">
-          {state.tags.map((tag) => (
-            <label key={tag.id}>
-              <input
-                type="checkbox"
-                name="tagIds"
-                value={tag.id}
-                defaultChecked={editingEvent?.tagIds.includes(tag.id)}
-              />
-              {tag.name}
-            </label>
-          ))}
-        </div>
-        {editingEvent && (
-          <button
-            className="danger"
-            type="button"
-            onClick={() => {
-              onDeleteEvent(editingEvent.id);
-              setEditingEventId(null);
-            }}
-          >
-            Delete
-          </button>
-        )}
-        <button className="primary" type="submit">
-          {editingEvent ? "Save event" : `Add to ${formatShortDate(date)}`}
-        </button>
-      </form>
+      {!editingEvent && !editingOccurrence && (
+        <EventEditor
+          key={`new-${date}`}
+          date={date}
+          tags={state.tags}
+          onSave={onSaveEvent}
+        />
+      )}
     </div>
   );
 }

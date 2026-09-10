@@ -79,6 +79,7 @@ export const seedState = (): AppState => {
       },
     ],
     completions: [],
+    occurrenceOverrides: [],
     events: [
       {
         id: "event-deep-work",
@@ -208,6 +209,7 @@ function migrateV1(legacy: LegacyState): AppState | null {
       })),
       ...checklistCompletions,
     ],
+    occurrenceOverrides: [],
     events: legacy.events.map((event) => ({ ...event, tagIds: [] })),
     tags: seed.tags,
     goals: (legacy.goals ?? []).map((goal) => ({
@@ -225,7 +227,12 @@ export function loadState(): AppState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as AppState;
-      if (parsed.tasks && parsed.tags && parsed.events) return parsed;
+      if (parsed.tasks && parsed.tags && parsed.events) {
+        return {
+          ...parsed,
+          occurrenceOverrides: parsed.occurrenceOverrides ?? [],
+        };
+      }
     }
     const legacyRaw = localStorage.getItem(LEGACY_KEY);
     if (legacyRaw) {

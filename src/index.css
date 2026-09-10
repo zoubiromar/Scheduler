@@ -159,24 +159,6 @@ section h2 {
   color: var(--coral);
 }
 
-form.event-form {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin: 12px 0 24px;
-}
-
-form.event-form input {
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 8px 10px;
-  background: #fff;
-}
-
-form.event-form .span-2 {
-  grid-column: span 2;
-}
-
 .footer-note {
   margin-top: 28px;
   color: var(--muted);
@@ -237,8 +219,7 @@ button:disabled {
 }
 
 .filter-row,
-.tag-list,
-.tag-checks {
+.tag-list {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -286,15 +267,37 @@ button:disabled {
   align-items: center;
 }
 
-.tag-checks label {
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
 .editor-panel {
   max-width: 760px;
   margin: 0 auto;
   padding: 6px 0 32px;
+}
+
+.inline-editor {
+  max-width: 760px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 14px 0 22px;
+  box-shadow: 0 12px 32px rgba(28, 25, 22, 0.08);
+}
+
+.inline-editor .form-title {
+  margin-bottom: 14px;
+}
+
+.editor-time-toggle {
+  align-self: center;
+  margin: 8px 0 14px;
+}
+
+.compact-picker {
+  margin-top: 0;
+}
+
+.occurrence-actions {
+  flex-wrap: wrap;
 }
 
 .field,
@@ -670,7 +673,8 @@ button:disabled {
   position: absolute;
   z-index: 30;
   left: 0;
-  top: calc(100% + 8px);
+  /* No hover gap: the pointer can travel from the block into this card. */
+  top: calc(100% - 1px);
   width: max-content;
   min-width: 210px;
   max-width: 280px;

@@ -48,6 +48,50 @@ describe("occursOn", () => {
     expect(occursOn(rule, "2026-09-07")).toBe(true);
     expect(occursOn(rule, "2026-09-09")).toBe(false);
   });
+
+  it("supports an ongoing cycle without an end date", () => {
+    const rule: Recurrence = {
+      kind: "cycle",
+      length: 3,
+      active: [1],
+      startDate: "2026-01-01",
+    };
+    expect(occursOn(rule, "2026-01-02")).toBe(true);
+    expect(occursOn(rule, "2027-01-03")).toBe(true);
+  });
+
+  it("does not emit dates before a future start", () => {
+    const rule: Recurrence = {
+      kind: "weekdays",
+      days: [1, 4],
+      startDate: "2026-09-10",
+    };
+    expect(occurrencesInRange(rule, "2026-09-01", "2026-09-14")).toEqual([
+      "2026-09-10",
+      "2026-09-14",
+    ]);
+  });
+
+  it("allows a weekday rule with no selected days", () => {
+    const rule: Recurrence = {
+      kind: "weekdays",
+      days: [],
+      startDate: "2026-09-01",
+    };
+    expect(occurrencesInRange(rule, "2026-09-01", "2026-09-30")).toEqual([]);
+  });
+
+  it("keeps cycle positions anchored to the start date", () => {
+    const rule: Recurrence = {
+      kind: "cycle",
+      length: 6,
+      active: [0],
+      startDate: "2026-09-03",
+    };
+    expect(occursOn(rule, "2026-09-03")).toBe(true);
+    expect(occursOn(rule, "2026-09-08")).toBe(false);
+    expect(occursOn(rule, "2026-09-09")).toBe(true);
+  });
 });
 
 describe("availability", () => {

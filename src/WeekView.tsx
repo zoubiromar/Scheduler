@@ -137,7 +137,6 @@ export function WeekView({
                           "--tag-color": color,
                         } as React.CSSProperties}
                       >
-                        <span>{formatTime(item.startTime)}</span>
                         <strong>{item.title}</strong>
                       </div>
                     );

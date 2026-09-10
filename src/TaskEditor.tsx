@@ -30,9 +30,11 @@ export function TaskEditor({ task, tags, onSave, onCancel, onDelete }: TaskEdito
 
   const selectedCount =
     recurrence.kind === "weekdays" ? recurrence.days.length : recurrence.active.length;
+  const endMissing = hasEnd && !recurrence.endDate;
   const endInvalid =
     hasEnd && Boolean(recurrence.endDate) && recurrence.endDate! < recurrence.startDate;
-  const canSave = title.trim().length > 0 && selectedCount > 0 && !endInvalid;
+  const canSave =
+    title.trim().length > 0 && selectedCount > 0 && !endMissing && !endInvalid;
 
   function save() {
     if (!canSave) return;
@@ -135,6 +137,7 @@ export function TaskEditor({ task, tags, onSave, onCancel, onDelete }: TaskEdito
           />
         </label>
       </div>
+      {endMissing && <p className="form-error">Choose an end date or turn Ends off.</p>}
       {endInvalid && <p className="form-error">End date cannot be before the start date.</p>}
 
       <fieldset className="tag-picker">

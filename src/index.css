@@ -854,13 +854,14 @@ button:disabled {
     height: 32px;
     overflow: hidden;
     padding: 0;
-    color: transparent;
+    font-size: 0;
   }
 
   .tag-editor-row .danger::after {
     content: "×";
     color: var(--coral);
     font-size: 1rem;
+    line-height: 1;
   }
 
   .tag-editor-row .color-input {

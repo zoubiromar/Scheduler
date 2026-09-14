@@ -11,6 +11,7 @@ interface OccurrenceEditorProps {
   onSave: (override: TaskOccurrenceOverride) => void;
   onRemove: (taskId: string, originalDate: string) => void;
   onReset: (taskId: string, originalDate: string) => void;
+  onEditSeries: (taskId: string) => void;
   onCancel: () => void;
 }
 
@@ -21,6 +22,7 @@ export function OccurrenceEditor({
   onSave,
   onRemove,
   onReset,
+  onEditSeries,
   onCancel,
 }: OccurrenceEditorProps) {
   const [title, setTitle] = useState(occurrence.title);
@@ -113,6 +115,13 @@ export function OccurrenceEditor({
             Reset to series
           </button>
         )}
+        <button
+          className="ghost"
+          type="button"
+          onClick={() => onEditSeries(occurrence.taskId)}
+        >
+          Edit series
+        </button>
         <button
           className="primary"
           type="button"

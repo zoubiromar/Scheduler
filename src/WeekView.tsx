@@ -17,8 +17,6 @@ interface WeekViewProps {
   onFilterChange: (tagId: string | null) => void;
   onToggleTask: (taskId: string, date: string) => void;
   onToggleEvent: (eventId: string) => void;
-  fullWidth: boolean;
-  onFullWidthChange: (value: boolean) => void;
   onShiftWeek: (delta: number) => void;
   onSelectDate: (iso: string) => void;
 }
@@ -56,8 +54,6 @@ export function WeekView({
   onFilterChange,
   onToggleTask,
   onToggleEvent,
-  fullWidth,
-  onFullWidthChange,
   onShiftWeek,
   onSelectDate,
 }: WeekViewProps) {
@@ -66,19 +62,11 @@ export function WeekView({
   const today = todayISO();
 
   return (
-    <div className={`week-view${fullWidth ? " full-width" : ""}`}>
+    <div className="week-view">
       <div className="week-toolbar">
-        <button className="ghost" type="button" onClick={() => onShiftWeek(-1)}>Previous week</button>
+        <button className="icon-button" type="button" aria-label="Previous week" onClick={() => onShiftWeek(-1)}>←</button>
         <strong>{start} — {days[6]}</strong>
-        <button className="ghost" type="button" onClick={() => onShiftWeek(1)}>Next week</button>
-        <label className="width-toggle">
-          <input
-            type="checkbox"
-            checked={fullWidth}
-            onChange={(event) => onFullWidthChange(event.target.checked)}
-          />
-          <span>Full width</span>
-        </label>
+        <button className="icon-button" type="button" aria-label="Next week" onClick={() => onShiftWeek(1)}>→</button>
       </div>
       <TagFilter tags={state.tags} selectedId={selectedTagId} onChange={onFilterChange} />
       <div className="week-hours" aria-hidden="true">

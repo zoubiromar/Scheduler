@@ -1,7 +1,6 @@
 import { useState } from "react";
+import { nextTagColor } from "./lib/tags";
 import type { Tag } from "./types";
-
-const DEFAULT_COLOR = "#7067a8";
 
 interface TagsViewProps {
   tags: Tag[];
@@ -13,28 +12,23 @@ interface TagsViewProps {
 
 export function TagsView({ tags, usage, onAdd, onUpdate, onDelete }: TagsViewProps) {
   const [name, setName] = useState("");
-  const [color, setColor] = useState(DEFAULT_COLOR);
 
   function addTag() {
     const trimmed = name.trim();
     if (!trimmed || tags.some((tag) => tag.name.toLowerCase() === trimmed.toLowerCase())) return;
-    onAdd({ id: crypto.randomUUID(), name: trimmed, color });
+    onAdd({
+      id: crypto.randomUUID(),
+      name: trimmed,
+      color: nextTagColor(tags.length),
+    });
     setName("");
-    setColor(DEFAULT_COLOR);
   }
 
   return (
     <div className="tags-view">
       <div className="section-heading">
-        <div>
-          <p className="eyebrow">Your vocabulary</p>
-          <h2>Tags</h2>
-        </div>
+        <h2>Tags</h2>
       </div>
-      <p className="caption">
-        Create labels that make sense for your life—Together, Date night, Work, Sleep, or anything
-        else. Names and colors can always be changed.
-      </p>
 
       <div className="tag-editor-list">
         {tags.length === 0 && <p className="empty">No tags yet. Tasks can also be left untagged.</p>}
@@ -63,13 +57,6 @@ export function TagsView({ tags, usage, onAdd, onUpdate, onDelete }: TagsViewPro
       </div>
 
       <div className="new-tag-card">
-        <input
-          className="color-input"
-          type="color"
-          aria-label="New tag color"
-          value={color}
-          onChange={(event) => setColor(event.target.value)}
-        />
         <input
           aria-label="New tag name"
           placeholder="New tag name"

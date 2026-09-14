@@ -2,32 +2,23 @@ import { useEffect, useMemo, useState } from "react";
 import type { AppState, CalendarEvent, TaskOccurrenceOverride } from "./types";
 import { TodayView, shiftIso } from "./TodayView";
 import { TasksView } from "./TasksView";
-import { TagsView } from "./TagsView";
 import { WeekView } from "./WeekView";
 import { loadState, saveState, seedState, STORAGE_KEY } from "./lib/storage";
 import { addDays, todayISO } from "./lib/dates";
-import { busyRangesOnDate, formatSlot, freeSlots, weekdayWindow } from "./lib/availability";
 import type { RepeatingTask, Tag } from "./types";
 
-type Tab = "today" | "week" | "tasks" | "tags" | "book";
+type Tab = "today" | "week" | "tasks";
 
 export default function App() {
   const [state, setState] = useState<AppState>(() => loadState());
   const [date, setDate] = useState(todayISO);
   const [tab, setTab] = useState<Tab>("today");
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
-  const [createTaskRequested, setCreateTaskRequested] = useState(false);
-  const [weekFullWidth, setWeekFullWidth] = useState(
-    () => localStorage.getItem("dayline.weekFullWidth") === "true",
-  );
+  const [editTaskRequested, setEditTaskRequested] = useState<string | null>(null);
 
   useEffect(() => {
     saveState(state);
   }, [state]);
-
-  useEffect(() => {
-    localStorage.setItem("dayline.weekFullWidth", String(weekFullWidth));
-  }, [weekFullWidth]);
 
   const today = todayISO();
 
@@ -159,24 +150,6 @@ export default function App() {
     if (selectedTagId === tagId) setSelectedTagId(null);
   }
 
-  const bookSlots = useMemo(() => {
-    const page = state.bookingPage;
-    const window = weekdayWindow(page.weeklyHours, date);
-    if (!window) return [];
-    const busy = busyRangesOnDate(
-      date,
-      state.tasks,
-      state.events,
-      state.occurrenceOverrides,
-    );
-    return freeSlots({
-      window,
-      busy,
-      durationMinutes: page.durationMinutes,
-      bufferMinutes: page.bufferMinutes,
-    });
-  }, [state, date]);
-
   const tagUsage = useMemo(() => {
     const usage: Record<string, number> = {};
     for (const tag of state.tags) {
@@ -192,10 +165,7 @@ export default function App() {
   return (
     <div>
       <header className="app-header">
-        <div>
-          <p className="eyebrow">Dayline</p>
-          <h1>Your day, in one place</h1>
-        </div>
+        <h1>Dayline</h1>
         <nav className="nav">
           <button className={tab === "today" ? "active" : ""} type="button" onClick={() => setTab("today")}>
             Today
@@ -203,14 +173,15 @@ export default function App() {
           <button className={tab === "week" ? "active" : ""} type="button" onClick={() => setTab("week")}>
             Week
           </button>
-          <button className={tab === "tasks" ? "active" : ""} type="button" onClick={() => setTab("tasks")}>
+          <button
+            className={tab === "tasks" ? "active" : ""}
+            type="button"
+            onClick={() => {
+              setEditTaskRequested(null);
+              setTab("tasks");
+            }}
+          >
             Tasks
-          </button>
-          <button className={tab === "tags" ? "active" : ""} type="button" onClick={() => setTab("tags")}>
-            Tags
-          </button>
-          <button className={tab === "book" ? "active" : ""} type="button" onClick={() => setTab("book")}>
-            Booking
           </button>
         </nav>
       </header>
@@ -224,6 +195,7 @@ export default function App() {
           onToggleTask={toggleTask}
           onToggleEvent={toggleEvent}
           onSaveEvent={saveEvent}
+          onSaveTask={saveTask}
           onDeleteEvent={(eventId) =>
             setState((current) => ({
               ...current,
@@ -233,12 +205,13 @@ export default function App() {
           onSaveOccurrenceOverride={saveOccurrenceOverride}
           onSkipOccurrence={skipOccurrence}
           onResetOccurrence={resetOccurrence}
-          onCreateRepeating={() => {
-            setCreateTaskRequested(true);
+          onEditSeries={(taskId) => {
+            setEditTaskRequested(taskId);
             setTab("tasks");
           }}
           onCreateTag={addTag}
           onShiftDate={(delta) => setDate(shiftIso(date, delta, today))}
+          isToday={date === today}
         />
       )}
 
@@ -250,8 +223,6 @@ export default function App() {
           onFilterChange={setSelectedTagId}
           onToggleTask={toggleTask}
           onToggleEvent={toggleEvent}
-          fullWidth={weekFullWidth}
-          onFullWidthChange={setWeekFullWidth}
           onShiftWeek={(delta) => setDate(addDays(date, delta * 7))}
           onSelectDate={(iso) => {
             setDate(iso);
@@ -262,11 +233,12 @@ export default function App() {
 
       {tab === "tasks" && (
         <TasksView
-          key={createTaskRequested ? "create-requested" : "tasks"}
+          key={editTaskRequested ?? "tasks"}
           tasks={state.tasks}
           tags={state.tags}
-          startCreating={createTaskRequested}
-          onEditorClosed={() => setCreateTaskRequested(false)}
+          startEditingId={editTaskRequested}
+          tagUsage={tagUsage}
+          onEditorClosed={() => setEditTaskRequested(null)}
           onSaveTask={saveTask}
           onDeleteTask={(taskId) =>
             setState((current) => ({
@@ -278,70 +250,15 @@ export default function App() {
             }))
           }
           onCreateTag={addTag}
-        />
-      )}
-
-      {tab === "tags" && (
-        <TagsView
-          tags={state.tags}
-          usage={tagUsage}
-          onAdd={addTag}
-          onUpdate={updateTag}
-          onDelete={deleteTag}
-        />
-      )}
-
-      {tab === "book" && (
-        <section>
-          <h2>One booking page (MVP spec)</h2>
-          <p className="caption">
-            Public link would be /book/{state.bookingPage.slug}. Guest booking confirmations
-            are deferred until Today-view tests. Free slots use all timed tasks and events.
-          </p>
-          <div className="card">
-            <div>
-              <div>{state.bookingPage.title}</div>
-              <div className="meta">
-                {state.bookingPage.durationMinutes} min · buffer {state.bookingPage.bufferMinutes} min
-              </div>
-            </div>
-          </div>
-          <p className="caption">Open hours on {date}:</p>
-          {bookSlots.length === 0 ? (
-            <p className="empty">No free slots this day (weekend hours only in the seed).</p>
-          ) : (
-            bookSlots.map((slot) => (
-              <div className="card" key={slot.startMinutes}>
-                <div className="time">{formatSlot(slot)}</div>
-                <div>Available</div>
-              </div>
-            ))
-          )}
-          <div className="date-row">
-            <button className="ghost" type="button" onClick={() => setDate(addDays(date, 1))}>
-              Check next day
-            </button>
-          </div>
-        </section>
-      )}
-
-      <p className="footer-note">
-        Completions are saved on this device. Google Calendar two-way sync is out of scope.
-        <button
-          className="ghost"
-          type="button"
-          style={{ marginLeft: 8 }}
-          onClick={() => {
+          onUpdateTag={updateTag}
+          onDeleteTag={deleteTag}
+          onResetData={() => {
             localStorage.removeItem(STORAGE_KEY);
             setState(seedState());
+            setSelectedTagId(null);
           }}
-        >
-          Reset demo data
-        </button>
-        <span className="build-id" title="Deployed build">
-          build {__BUILD_ID__}
-        </span>
-      </p>
+        />
+      )}
     </div>
   );
 }

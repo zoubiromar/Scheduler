@@ -28,7 +28,6 @@ export function TaskEditor({
   const [duration, setDuration] = useState(task?.durationMinutes ?? 30);
   const [tagIds, setTagIds] = useState(task?.tagIds ?? []);
   const [hasEnd, setHasEnd] = useState(Boolean(task?.recurrence.endDate));
-  const [skipDate, setSkipDate] = useState("");
   const [recurrence, setRecurrence] = useState<Recurrence>(
     task?.recurrence ?? {
       kind: "weekdays",
@@ -61,22 +60,10 @@ export function TaskEditor({
     });
   }
 
-  function skipOccurrence() {
-    if (!skipDate) return;
-    setRecurrence({
-      ...recurrence,
-      exdates: [...new Set([...(recurrence.exdates ?? []), skipDate])].sort(),
-    });
-    setSkipDate("");
-  }
-
   return (
     <div className="editor-panel">
       <div className="section-heading">
-        <div>
-          <p className="eyebrow">{task ? "Edit series" : "New repeating task"}</p>
-          <h2>{task?.title ?? "Build a pattern"}</h2>
-        </div>
+        <h2>{task ? "Edit repeating task" : "New repeating task"}</h2>
         <button className="ghost" type="button" onClick={onCancel}>
           Close
         </button>
@@ -155,21 +142,6 @@ export function TaskEditor({
         onChange={setTagIds}
         onCreateTag={onCreateTag}
       />
-
-      {task && (
-        <div className="skip-row">
-          <label className="field">
-            <span>Skip one occurrence</span>
-            <input type="date" value={skipDate} onChange={(event) => setSkipDate(event.target.value)} />
-          </label>
-          <button className="ghost" type="button" disabled={!skipDate} onClick={skipOccurrence}>
-            Add exception
-          </button>
-          {(recurrence.exdates?.length ?? 0) > 0 && (
-            <p className="field-help">{recurrence.exdates!.length} skipped date(s)</p>
-          )}
-        </div>
-      )}
 
       {selectedCount === 0 && <p className="form-error">Select at least one day.</p>}
       <div className="editor-actions">

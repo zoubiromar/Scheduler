@@ -1,7 +1,6 @@
 import { useState } from "react";
+import { nextTagColor } from "./lib/tags";
 import type { Tag } from "./types";
-
-const DEFAULT_COLOR = "#7067a8";
 
 interface TagChoicesProps {
   tags: Tag[];
@@ -18,7 +17,6 @@ export function TagChoices({
 }: TagChoicesProps) {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
-  const [color, setColor] = useState(DEFAULT_COLOR);
   const duplicate = tags.some(
     (tag) => tag.name.toLowerCase() === name.trim().toLowerCase(),
   );
@@ -26,11 +24,14 @@ export function TagChoices({
   function createTag() {
     const trimmed = name.trim();
     if (!trimmed || duplicate) return;
-    const tag = { id: crypto.randomUUID(), name: trimmed, color };
+    const tag = {
+      id: crypto.randomUUID(),
+      name: trimmed,
+      color: nextTagColor(tags.length),
+    };
     onCreateTag(tag);
     onChange([...selected, tag.id]);
     setName("");
-    setColor(DEFAULT_COLOR);
     setCreating(false);
   }
 
@@ -68,12 +69,6 @@ export function TagChoices({
       {creating && (
         <div className="quick-tag-form">
           <input
-            type="color"
-            aria-label="Quick tag color"
-            value={color}
-            onChange={(event) => setColor(event.target.value)}
-          />
-          <input
             aria-label="Quick tag name"
             placeholder="Tag name"
             value={name}
@@ -86,9 +81,6 @@ export function TagChoices({
           />
           <button className="primary" type="button" disabled={!name.trim() || duplicate} onClick={createTag}>
             Add
-          </button>
-          <button className="ghost" type="button" onClick={() => setCreating(false)}>
-            Cancel
           </button>
         </div>
       )}

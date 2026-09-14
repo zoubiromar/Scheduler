@@ -80,7 +80,7 @@ export function TagChoices({
             }}
           />
           <button className="primary" type="button" disabled={!name.trim() || duplicate} onClick={createTag}>
-            Add
+            Create
           </button>
         </div>
       )}

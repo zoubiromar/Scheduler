@@ -840,12 +840,32 @@ button:disabled {
   }
 
   .tag-editor-row {
-    grid-template-columns: 40px 1fr;
+    grid-template-columns: 32px minmax(0, 1fr) 32px;
+    gap: 7px;
   }
 
-  .tag-editor-row .meta,
+  .tag-editor-row .meta {
+    display: none;
+  }
+
   .tag-editor-row .danger {
-    grid-column: 2;
+    grid-column: auto;
+    width: 32px;
+    height: 32px;
+    overflow: hidden;
+    padding: 0;
+    color: transparent;
+  }
+
+  .tag-editor-row .danger::after {
+    content: "×";
+    color: var(--coral);
+    font-size: 1rem;
+  }
+
+  .tag-editor-row .color-input {
+    width: 30px;
+    height: 30px;
   }
 
   .new-tag-card,

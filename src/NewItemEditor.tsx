@@ -162,7 +162,7 @@ export function NewItemEditor({
 
       <div className="editor-actions">
         <button className="primary" type="button" disabled={!canSave} onClick={save}>
-          Add
+          Add item
         </button>
       </div>
     </div>

@@ -9,8 +9,9 @@ interface OccurrenceEditorProps {
   tags: Tag[];
   onCreateTag: (tag: Tag) => void;
   onSave: (override: TaskOccurrenceOverride) => void;
-  onRemove: (override: TaskOccurrenceOverride) => void;
+  onRemove: (taskId: string, originalDate: string) => void;
   onReset: (taskId: string, originalDate: string) => void;
+  onEditSeries: (taskId: string) => void;
   onCancel: () => void;
 }
 
@@ -21,6 +22,7 @@ export function OccurrenceEditor({
   onSave,
   onRemove,
   onReset,
+  onEditSeries,
   onCancel,
 }: OccurrenceEditorProps) {
   const [title, setTitle] = useState(occurrence.title);
@@ -31,7 +33,7 @@ export function OccurrenceEditor({
   const [duration, setDuration] = useState(occurrence.durationMinutes ?? 30);
   const [tagIds, setTagIds] = useState(occurrence.tagIds);
 
-  function currentOverride(cancelled = false): TaskOccurrenceOverride {
+  function currentOverride(): TaskOccurrenceOverride {
     return occurrenceToOverride(occurrence, {
       title: title.trim() || occurrence.title,
       notes: notes.trim() || undefined,
@@ -39,7 +41,6 @@ export function OccurrenceEditor({
       startTime: timed ? startTime : undefined,
       durationMinutes: timed ? duration : undefined,
       tagIds,
-      cancelled,
     });
   }
 
@@ -98,8 +99,12 @@ export function OccurrenceEditor({
         onCreateTag={onCreateTag}
       />
       <div className="editor-actions occurrence-actions">
-        <button className="danger" type="button" onClick={() => onRemove(currentOverride(true))}>
-          Remove this date
+        <button
+          className="danger"
+          type="button"
+          onClick={() => onRemove(occurrence.taskId, occurrence.originalDate)}
+        >
+          Skip this date
         </button>
         {occurrence.isOverride && (
           <button
@@ -110,6 +115,13 @@ export function OccurrenceEditor({
             Reset to series
           </button>
         )}
+        <button
+          className="ghost"
+          type="button"
+          onClick={() => onEditSeries(occurrence.taskId)}
+        >
+          Edit series
+        </button>
         <button
           className="primary"
           type="button"

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TagsView } from "./TagsView";
 import { TaskEditor } from "./TaskEditor";
 import { formatShortDate, formatTime } from "./lib/dates";
 import type { RepeatingTask, Tag } from "./types";
@@ -7,10 +8,14 @@ const WEEKDAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 interface TasksViewProps {
   tasks: RepeatingTask[];
   tags: Tag[];
-  startCreating?: boolean;
+  startEditingId?: string | null;
+  tagUsage: Record<string, number>;
   onSaveTask: (task: RepeatingTask) => void;
   onDeleteTask: (taskId: string) => void;
   onCreateTag: (tag: Tag) => void;
+  onUpdateTag: (tagId: string, patch: Partial<Pick<Tag, "name" | "color">>) => void;
+  onDeleteTag: (tagId: string) => void;
+  onResetData: () => void;
   onEditorClosed: () => void;
 }
 
@@ -20,22 +25,28 @@ export function recurrenceSummary(task: RepeatingTask): string {
     rule.kind === "weekdays"
       ? rule.days.map((day) => WEEKDAY_NAMES[day]).join(", ")
       : `Days ${rule.active.map((day) => day + 1).join(", ")} of ${rule.length}`;
+  const start =
+    rule.kind === "cycle" ? ` · from ${formatShortDate(rule.startDate)}` : "";
   const time = task.startTime ? ` · ${formatTime(task.startTime)}` : " · anytime";
   const end = rule.endDate ? ` · until ${formatShortDate(rule.endDate)}` : "";
-  return `${pattern}${time}${end}`;
+  return `${pattern}${start}${time}${end}`;
 }
 
 export function TasksView({
   tasks,
   tags,
-  startCreating,
+  startEditingId,
+  tagUsage,
   onSaveTask,
   onDeleteTask,
   onCreateTag,
+  onUpdateTag,
+  onDeleteTag,
+  onResetData,
   onEditorClosed,
 }: TasksViewProps) {
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [creating, setCreating] = useState(Boolean(startCreating));
+  const [editingId, setEditingId] = useState<string | null>(startEditingId ?? null);
+  const [creating, setCreating] = useState(false);
 
   const editing = tasks.find((task) => task.id === editingId);
 
@@ -72,12 +83,9 @@ export function TasksView({
   return (
     <div>
       <div className="section-heading">
-        <div>
-          <p className="eyebrow">Repeating tasks</p>
-          <h2>Your patterns</h2>
-        </div>
+        <h2>Repeating tasks</h2>
         <button className="primary" type="button" onClick={() => setCreating(true)}>
-          New repeating task
+          Add
         </button>
       </div>
 
@@ -99,6 +107,20 @@ export function TasksView({
         ))}
       </div>
 
+      <TagsView
+        tags={tags}
+        usage={tagUsage}
+        onAdd={onCreateTag}
+        onUpdate={onUpdateTag}
+        onDelete={onDeleteTag}
+      />
+
+      <details className="app-settings">
+        <summary>App settings</summary>
+        <button className="danger" type="button" onClick={onResetData}>
+          Reset local data
+        </button>
+      </details>
     </div>
   );
 }

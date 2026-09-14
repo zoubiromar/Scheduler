@@ -1,11 +1,17 @@
 import { useMemo, useState } from "react";
 import { EventEditor } from "./EventEditor";
+import { NewItemEditor } from "./NewItemEditor";
 import { OccurrenceEditor } from "./OccurrenceEditor";
 import { TagFilter } from "./TagFilter";
 import { TagPill } from "./TasksView";
 import { addDays, formatDisplayDate, formatTime } from "./lib/dates";
 import { resolveTaskOccurrences } from "./lib/occurrences";
-import type { AppState, CalendarEvent, TaskOccurrenceOverride } from "./types";
+import type {
+  AppState,
+  CalendarEvent,
+  RepeatingTask,
+  TaskOccurrenceOverride,
+} from "./types";
 
 interface TodayViewProps {
   date: string;
@@ -15,12 +21,15 @@ interface TodayViewProps {
   onToggleTask: (taskId: string, date: string) => void;
   onToggleEvent: (eventId: string) => void;
   onSaveEvent: (event: CalendarEvent) => void;
+  onSaveTask: (task: RepeatingTask) => void;
   onDeleteEvent: (eventId: string) => void;
   onSaveOccurrenceOverride: (override: TaskOccurrenceOverride) => void;
+  onSkipOccurrence: (taskId: string, originalDate: string) => void;
   onResetOccurrence: (taskId: string, originalDate: string) => void;
-  onCreateRepeating: () => void;
+  onEditSeries: (taskId: string) => void;
   onCreateTag: (tag: AppState["tags"][number]) => void;
   onShiftDate: (delta: number) => void;
+  isToday: boolean;
 }
 
 export function TodayView({
@@ -31,16 +40,19 @@ export function TodayView({
   onToggleTask,
   onToggleEvent,
   onSaveEvent,
+  onSaveTask,
   onDeleteEvent,
   onSaveOccurrenceOverride,
+  onSkipOccurrence,
   onResetOccurrence,
-  onCreateRepeating,
+  onEditSeries,
   onCreateTag,
   onShiftDate,
+  isToday,
 }: TodayViewProps) {
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [editingOccurrenceKey, setEditingOccurrenceKey] = useState<string | null>(null);
-  const [addingEvent, setAddingEvent] = useState(false);
+  const [addingItem, setAddingItem] = useState(false);
   const occurrencesToday = useMemo(
     () =>
       resolveTaskOccurrences(state.tasks, state.occurrenceOverrides, date).filter(
@@ -102,24 +114,43 @@ export function TodayView({
   function shiftDate(delta: number) {
     setEditingEventId(null);
     setEditingOccurrenceKey(null);
-    setAddingEvent(false);
+    setAddingItem(false);
     onShiftDate(delta);
   }
 
   return (
     <div>
       <div className="date-row">
-        <button className="ghost" type="button" onClick={() => shiftDate(-1)}>Previous</button>
+        <button className="icon-button" type="button" aria-label="Previous day" onClick={() => shiftDate(-1)}>←</button>
         <strong>{formatDisplayDate(date)}</strong>
-        <button className="ghost" type="button" onClick={() => shiftDate(1)}>Next</button>
-        <button className="ghost" type="button" onClick={() => shiftDate(0)}>Today</button>
+        <button className="icon-button" type="button" aria-label="Next day" onClick={() => shiftDate(1)}>→</button>
+        {!isToday && (
+          <button className="ghost" type="button" onClick={() => shiftDate(0)}>Today</button>
+        )}
+        <button
+          className="primary add-item-button"
+          type="button"
+          aria-label="Add item"
+          onClick={() => {
+            setEditingEventId(null);
+            setEditingOccurrenceKey(null);
+            setAddingItem((value) => !value);
+          }}
+        >
+          +
+        </button>
       </div>
 
       <TagFilter tags={state.tags} selectedId={selectedTagId} onChange={onFilterChange} />
-      <div className="progress-track" aria-label={`${percent} percent complete`}>
-        <span style={{ width: `${percent}%` }} />
-      </div>
-      <p className="caption">{done} of {allOccurrencesToday.length} repeating tasks done today</p>
+      {allOccurrencesToday.length > 0 && (
+        <div
+          className="progress-track"
+          aria-label={`${done} of ${allOccurrencesToday.length} repeating tasks complete`}
+          title={`${done} of ${allOccurrencesToday.length} complete`}
+        >
+          <span style={{ width: `${percent}%` }} />
+        </div>
+      )}
 
       {editingOccurrence && (
         <OccurrenceEditor
@@ -132,14 +163,15 @@ export function TodayView({
             onSaveOccurrenceOverride(override);
             setEditingOccurrenceKey(null);
           }}
-          onRemove={(override) => {
-            onSaveOccurrenceOverride(override);
+          onRemove={(taskId, originalDate) => {
+            onSkipOccurrence(taskId, originalDate);
             setEditingOccurrenceKey(null);
           }}
           onReset={(taskId, originalDate) => {
             onResetOccurrence(taskId, originalDate);
             setEditingOccurrenceKey(null);
           }}
+          onEditSeries={onEditSeries}
         />
       )}
 
@@ -162,26 +194,26 @@ export function TodayView({
         />
       )}
 
+      {addingItem && (
+        <NewItemEditor
+          key={`new-${date}`}
+          date={date}
+          tags={state.tags}
+          onCreateTag={onCreateTag}
+          onCancel={() => setAddingItem(false)}
+          onSaveEvent={(event) => {
+            onSaveEvent(event);
+            setAddingItem(false);
+          }}
+          onSaveTask={(task) => {
+            onSaveTask(task);
+            setAddingItem(false);
+          }}
+        />
+      )}
+
       <section>
-        <div className="section-heading compact">
-          <h2>Anytime</h2>
-          <div className="section-actions">
-            <button
-              className="ghost"
-              type="button"
-              onClick={() => {
-                setEditingEventId(null);
-                setEditingOccurrenceKey(null);
-                setAddingEvent(true);
-              }}
-            >
-              New one-time item
-            </button>
-            <button className="ghost" type="button" onClick={onCreateRepeating}>
-              New repeating task
-            </button>
-          </div>
-        </div>
+        <h2>Anytime</h2>
         {untimedOccurrences.length === 0 && untimedEvents.length === 0 ? (
           <p className="empty">No untimed tasks match this day and filter.</p>
         ) : (
@@ -206,7 +238,7 @@ export function TodayView({
                 className="ghost card-action"
                 type="button"
                 onClick={() => {
-                  setAddingEvent(false);
+                  setAddingItem(false);
                   setEditingOccurrenceKey(occurrence.key);
                 }}
               >
@@ -230,7 +262,7 @@ export function TodayView({
                 className="ghost card-action"
                 type="button"
                 onClick={() => {
-                  setAddingEvent(false);
+                  setAddingItem(false);
                   setEditingEventId(event.id);
                 }}
               >
@@ -269,7 +301,7 @@ export function TodayView({
                 className="ghost card-action"
                 type="button"
                 onClick={() => {
-                  setAddingEvent(false);
+                  setAddingItem(false);
                   if (item.kind === "task") {
                     setEditingOccurrenceKey(item.occurrence.key);
                   } else {
@@ -283,20 +315,6 @@ export function TodayView({
           ))
         )}
       </section>
-
-      {!editingEvent && !editingOccurrence && addingEvent && (
-        <EventEditor
-          key={`new-${date}`}
-          date={date}
-          tags={state.tags}
-          onCreateTag={onCreateTag}
-          onCancel={() => setAddingEvent(false)}
-          onSave={(event) => {
-            onSaveEvent(event);
-            setAddingEvent(false);
-          }}
-        />
-      )}
     </div>
   );
 }

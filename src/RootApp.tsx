@@ -1,6 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./auth/AuthProvider";
+import { PartnershipProvider } from "./partnership/PartnershipProvider";
 import { AuthPage } from "./routes/AuthPage";
 import { InvitePage } from "./routes/InvitePage";
 import { LandingPage } from "./routes/LandingPage";
@@ -18,7 +19,9 @@ export default function RootApp() {
             path="/app/*"
             element={
               <ProtectedRoute>
-                <App />
+                <PartnershipProvider>
+                  <App />
+                </PartnershipProvider>
               </ProtectedRoute>
             }
           />

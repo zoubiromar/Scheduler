@@ -11,7 +11,7 @@ create table public.profiles (
 
 create table public.partnerships (
   id uuid primary key default gen_random_uuid(),
-  name text not null default 'Our Dayline',
+  name text not null default 'Our Pellia',
   created_by uuid not null references public.profiles(id),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -193,7 +193,7 @@ language sql as $$
   );
 $$;
 
-create or replace function public.create_partnership(partnership_name text default 'Our Dayline')
+create or replace function public.create_partnership(partnership_name text default 'Our Pellia')
 returns uuid
 security definer
 set search_path = public
@@ -207,7 +207,7 @@ begin
   end if;
 
   insert into public.partnerships (name, created_by)
-  values (coalesce(nullif(trim(partnership_name), ''), 'Our Dayline'), auth.uid())
+  values (coalesce(nullif(trim(partnership_name), ''), 'Our Pellia'), auth.uid())
   returning id into new_id;
 
   insert into public.partnership_members (partnership_id, user_id, role, color)

@@ -311,7 +311,7 @@ export default function App() {
     <div className="duo-app-shell">
       <header className="app-header app-sidebar">
         <div className="app-brand">
-          <h1>Dayline</h1>
+          <h1>Pellia</h1>
           <span>{partnership?.name ?? "Your space"}</span>
         </div>
         <nav className="nav app-nav">
@@ -365,7 +365,7 @@ export default function App() {
           role="status"
         >
           {!schedule.online
-            ? "You are offline. Changes stay on this device until Dayline reconnects."
+            ? "You are offline. Changes stay on this device until Pellia reconnects."
             : schedule.loading
             ? "Syncing your shared day…"
             : schedule.error || actionError || partnershipState.error}
@@ -375,7 +375,7 @@ export default function App() {
       {schedule.importAvailable && (
         <aside className="import-banner">
           <div>
-            <strong>Bring your existing Dayline with you?</strong>
+            <strong>Bring your existing Pellia with you?</strong>
             <span>Your local items have not been uploaded.</span>
           </div>
           <button

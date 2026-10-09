@@ -8,13 +8,13 @@ export function LandingPage() {
   return (
     <main className="landing-page">
       <nav className="landing-nav">
-        <strong>Dayline</strong>
+        <strong>Pellia</strong>
         <div>
           <Link className="ghost link-button" to="/auth">
             Sign in
           </Link>
           <Link className="primary link-button" to={auth.user ? "/app" : "/auth"}>
-            {auth.user ? "Open Dayline" : "Create account"}
+            {auth.user ? "Open Pellia" : "Create account"}
           </Link>
         </div>
       </nav>

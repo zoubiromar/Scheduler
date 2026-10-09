@@ -2,9 +2,9 @@
 
 ## Positioning
 
-**Dayline — a shared day for two.**
+**Pellia — a shared day for two.**
 
-Dayline gives couples one calm place for personal routines, shared commitments,
+Pellia gives couples one calm place for personal routines, shared commitments,
 and the week ahead. It is intentionally not a workplace team manager, household
 surveillance tool, or competitive habit game.
 

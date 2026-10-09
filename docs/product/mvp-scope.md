@@ -1,6 +1,6 @@
 # Duo MVP scope
 
-Dayline is a private planning space for exactly two people. A solo account can
+Pellia is a private planning space for exactly two people. A solo account can
 prepare a schedule, then an admin invites one partner into the shared space.
 
 ## In scope
@@ -11,7 +11,7 @@ prepare a schedule, then an admin invites one partner into the shared space.
 - Personal visible, personal private, and shared schedule items.
 - Assigned, either-partner, and both-partners completion rules.
 - Mirrored Today and 7 AM–midnight Week views.
-- Per-user timezones, realtime schedule updates, and local Dayline import.
+- Per-user timezones, realtime schedule updates, and local Pellia import.
 - Account, partnership, admin, schedule-default, privacy, and data settings.
 
 ## Privacy and authority

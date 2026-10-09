@@ -1,6 +1,6 @@
-# Dayline Duo
+# Pellia Duo
 
-Dayline is a two-person scheduling PWA. Each partner keeps personal or private
+Pellia is a two-person scheduling PWA. Each partner keeps personal or private
 items, while shared tasks appear once across mirrored Today and Week views.
 
 ## Run locally
@@ -23,7 +23,9 @@ Without Supabase values, use **Explore demo** from the landing page.
 4. Add these redirect URLs:
    - `http://localhost:5173/`
    - `https://zoubiromar.github.io/Scheduler/`
-5. Copy the project URL and public anon key into `.env.local`.
+5. Copy the project URL and publishable key into `.env.local`.
+
+For GitHub Pages, add the same two values as repository Actions secrets named `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. The secret key must stay in Supabase and must not be added to the frontend.
 
 The schema enforces a maximum of two members, one admin, private-item isolation,
 shared-item editing, per-user completion, and expiring partner invitations via

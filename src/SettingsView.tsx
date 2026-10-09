@@ -46,7 +46,7 @@ export function SettingsView({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [partnershipName, setPartnershipName] = useState(
-    partnership?.name ?? "Our Dayline",
+    partnership?.name ?? "Our Pellia",
   );
   const [displayName, setDisplayName] = useState("");
   const [timezone, setTimezone] = useState(
@@ -74,7 +74,7 @@ export function SettingsView({
   const isAdmin = partnership?.currentRole === "admin";
 
   useEffect(() => {
-    setPartnershipName(partnership?.name ?? "Our Dayline");
+    setPartnershipName(partnership?.name ?? "Our Pellia");
     setDisplayName(currentMember?.profile.displayName ?? "");
     setTimezone(
       currentMember?.profile.timezone ??
@@ -121,7 +121,7 @@ export function SettingsView({
     return (
       <section className="settings-view onboarding-settings">
         <p className="kicker">Partner invitation</p>
-        <h2>Join your partner’s Dayline</h2>
+        <h2>Join your partner’s Pellia</h2>
         <p>
           Accepting creates one shared space while keeping private items visible
           only to you.
@@ -279,7 +279,7 @@ export function SettingsView({
             </div>
           ) : (
             <>
-              <p>Invite one person to share this Dayline.</p>
+              <p>Invite one person to share this Pellia.</p>
               <label className="field">
                 <span>Partner email (optional)</span>
                 <input
@@ -420,7 +420,7 @@ export function SettingsView({
           <p>
             Shared items are visible and editable by both of you. Personal
             visible items can be seen by your partner but only edited by you.
-            Private items never appear in their Dayline—even to the admin.
+            Private items never appear in their Pellia—even to the admin.
           </p>
         </article>
 
@@ -467,7 +467,7 @@ export function SettingsView({
                   type="button"
                   disabled={busy || auth.demoMode}
                   onClick={() => {
-                    if (window.confirm("Remove your partner from this Dayline?")) {
+                    if (window.confirm("Remove your partner from this Pellia?")) {
                       void run(
                         () => removePartnershipMember(partner.profile.id),
                         "Partner removed.",

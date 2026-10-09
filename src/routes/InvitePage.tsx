@@ -14,7 +14,7 @@ export function InvitePage() {
     return (
       <main className="invite-page">
         <h1>This invitation link is incomplete.</h1>
-        <Link to="/">Return to Dayline</Link>
+        <Link to="/">Return to Pellia</Link>
       </main>
     );
   }
@@ -23,7 +23,7 @@ export function InvitePage() {
     <main className="invite-page">
       <section className="auth-card">
         <p className="kicker">Partner invitation</p>
-        <h1>You have been invited to share a Dayline.</h1>
+        <h1>You have been invited to share a Pellia.</h1>
         <p>
           Sign in first. We will keep this invitation ready and ask you to
           confirm before joining.

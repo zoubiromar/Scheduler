@@ -29,7 +29,7 @@ export function AuthPage() {
   return (
     <main className="auth-page">
       <Link className="brand-link" to="/">
-        Dayline
+        Pellia
       </Link>
       <section className="auth-card">
         <p className="kicker">Welcome</p>

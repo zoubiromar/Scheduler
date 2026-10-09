@@ -1,8 +1,16 @@
 import { useState } from "react";
+import { DuoItemSettings } from "./DuoItemSettings";
 import { RecurrenceBoxes } from "./RecurrenceBoxes";
 import { TagChoices } from "./TagChoices";
 import { todayISO } from "./lib/dates";
-import type { Recurrence, RepeatingTask, Tag } from "./types";
+import type {
+  CompletionRule,
+  ItemScope,
+  ItemVisibility,
+  Recurrence,
+  RepeatingTask,
+  Tag,
+} from "./types";
 
 interface TaskEditorProps {
   task?: RepeatingTask;
@@ -27,6 +35,14 @@ export function TaskEditor({
   const [startTime, setStartTime] = useState(task?.startTime ?? "09:00");
   const [duration, setDuration] = useState(task?.durationMinutes ?? 30);
   const [tagIds, setTagIds] = useState(task?.tagIds ?? []);
+  const [scope, setScope] = useState<ItemScope>(task?.scope ?? "shared");
+  const [visibility, setVisibility] = useState<ItemVisibility>(
+    task?.visibility ?? "partner_visible",
+  );
+  const [completionRule, setCompletionRule] = useState<CompletionRule>(
+    task?.completionRule ?? "assigned",
+  );
+  const [assigneeIds, setAssigneeIds] = useState(task?.assigneeIds ?? []);
   const [hasEnd, setHasEnd] = useState(Boolean(task?.recurrence.endDate));
   const [recurrence, setRecurrence] = useState<Recurrence>(
     task?.recurrence ?? {
@@ -57,6 +73,15 @@ export function TaskEditor({
         endDate: hasEnd ? recurrence.endDate : undefined,
       },
       tagIds,
+      ownerId: task?.ownerId,
+      partnershipId: task?.partnershipId,
+      scope,
+      visibility,
+      completionRule,
+      assigneeIds: assigneeIds.length > 0 ? assigneeIds : undefined,
+      anchorTimezone:
+        task?.anchorTimezone ??
+        Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
   }
 
@@ -141,6 +166,17 @@ export function TaskEditor({
         selected={tagIds}
         onChange={setTagIds}
         onCreateTag={onCreateTag}
+      />
+
+      <DuoItemSettings
+        scope={scope}
+        visibility={visibility}
+        completionRule={completionRule}
+        assigneeIds={assigneeIds}
+        onScopeChange={setScope}
+        onVisibilityChange={setVisibility}
+        onCompletionRuleChange={setCompletionRule}
+        onAssigneeIdsChange={setAssigneeIds}
       />
 
       {selectedCount === 0 && <p className="form-error">Select at least one day.</p>}

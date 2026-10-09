@@ -19,7 +19,21 @@ export interface CycleRecurrence extends RecurrenceBounds {
 
 export type Recurrence = WeekdayRecurrence | CycleRecurrence;
 
-export interface RepeatingTask {
+export type ItemScope = "personal" | "shared";
+export type ItemVisibility = "private" | "partner_visible";
+export type CompletionRule = "assigned" | "either" | "both";
+
+export interface DuoItemFields {
+  partnershipId?: string;
+  ownerId?: string;
+  scope?: ItemScope;
+  visibility?: ItemVisibility;
+  assigneeIds?: string[];
+  completionRule?: CompletionRule;
+  anchorTimezone?: string;
+}
+
+export interface RepeatingTask extends DuoItemFields {
   id: string;
   title: string;
   notes?: string;
@@ -32,6 +46,8 @@ export interface RepeatingTask {
 export interface TaskCompletion {
   taskId: string;
   date: string;
+  userId?: string;
+  completedAt?: string;
 }
 
 export interface TaskOccurrenceOverride {
@@ -51,7 +67,7 @@ export interface TaskOccurrenceOverride {
 
 export type EventSource = "manual" | "booking" | "google";
 
-export interface CalendarEvent {
+export interface CalendarEvent extends DuoItemFields {
   id: string;
   title: string;
   date: string;

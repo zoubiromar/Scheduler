@@ -1,6 +1,6 @@
-# Dayline product docs
+# Pellia product docs
 
-Working name in stores: **Dayline**. Repo/codename: `scheduler`.
+Working name in stores: **Pellia**. Repo/codename: `scheduler`.
 
 | Doc | Decision |
 | --- | --- |

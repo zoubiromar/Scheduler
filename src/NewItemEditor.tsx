@@ -1,7 +1,16 @@
 import { useState } from "react";
+import { DuoItemSettings } from "./DuoItemSettings";
 import { RecurrenceBoxes } from "./RecurrenceBoxes";
 import { TagChoices } from "./TagChoices";
-import type { CalendarEvent, Recurrence, RepeatingTask, Tag } from "./types";
+import type {
+  CalendarEvent,
+  CompletionRule,
+  ItemScope,
+  ItemVisibility,
+  Recurrence,
+  RepeatingTask,
+  Tag,
+} from "./types";
 
 interface NewItemEditorProps {
   date: string;
@@ -27,6 +36,12 @@ export function NewItemEditor({
   const [startTime, setStartTime] = useState("09:00");
   const [durationMinutes, setDurationMinutes] = useState(30);
   const [tagIds, setTagIds] = useState<string[]>([]);
+  const [scope, setScope] = useState<ItemScope>("shared");
+  const [visibility, setVisibility] =
+    useState<ItemVisibility>("partner_visible");
+  const [completionRule, setCompletionRule] =
+    useState<CompletionRule>("assigned");
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [recurrence, setRecurrence] = useState<Recurrence>({
     kind: "weekdays",
     days: [1, 2, 3, 4, 5],
@@ -45,6 +60,11 @@ export function NewItemEditor({
       startTime: timed ? startTime : undefined,
       durationMinutes: timed ? durationMinutes : undefined,
       tagIds,
+      scope,
+      visibility,
+      completionRule,
+      assigneeIds: assigneeIds.length > 0 ? assigneeIds : undefined,
+      anchorTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     };
 
     if (kind === "repeating") {
@@ -152,6 +172,17 @@ export function NewItemEditor({
           </label>
         </div>
       )}
+
+      <DuoItemSettings
+        scope={scope}
+        visibility={visibility}
+        completionRule={completionRule}
+        assigneeIds={assigneeIds}
+        onScopeChange={setScope}
+        onVisibilityChange={setVisibility}
+        onCompletionRuleChange={setCompletionRule}
+        onAssigneeIdsChange={setAssigneeIds}
+      />
 
       <TagChoices
         tags={tags}

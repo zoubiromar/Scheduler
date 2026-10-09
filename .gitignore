@@ -4,3 +4,5 @@ dist
 *.local
 coverage
 .vite
+test-results
+playwright-report

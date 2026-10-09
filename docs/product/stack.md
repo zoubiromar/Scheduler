@@ -1,42 +1,47 @@
-# Stack (locked)
+# Stack
 
-## Platform
+## Client
 
-**Web app + PWA first.** Installable on a phone home screen. Native wrappers only after daily retention is proven.
+- Vite, React, and TypeScript
+- React Router with hash routes while deployed to GitHub Pages
+- Plain responsive CSS
+- Installable PWA via `vite-plugin-pwa`
+- Vitest for domain/repository tests
 
-Why not native-first: booking is a URL; Google OAuth is simpler on web; day/week layouts are easier on a large viewport; one codebase.
+The route layer is isolated so a later Vercel deployment can switch to clean
+browser routes without changing product screens.
 
-## Frontend
+## Backend
 
-- **Vite + React + TypeScript**
-- Plain CSS (no design-system lock-in)
-- PWA via `vite-plugin-pwa` (offline shell; checklist completions queued locally)
+Supabase provides:
 
-Why Vite over Next.js for v1: the product is an authenticated SPA with a public booking route, not an SEO content site. File-based routing can move to Next.js later if marketing pages need it.
+- Auth with Google OAuth and email magic links
+- Postgres normalized around partnerships and schedule rows
+- Row Level Security for member, owner, and privacy rules
+- Realtime `postgres_changes` subscriptions
+- secure SQL functions for partnership creation and invitation lifecycle
 
-## Persistence (v1 slice)
+Environment variables are public client credentials:
 
-- **localStorage** JSON document (`dayline.v1`) so the Today view works without a backend.
-- Shape matches the data model so a later API can replace the storage adapter.
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+```
 
-## Backend (next, not this slice)
+All authorization remains in RLS; the anon key is safe to embed when policies
+are enabled. Service-role credentials must never enter the client.
 
-**Supabase** (Postgres + Auth + Row Level Security + optional Realtime).
+## Offline and migration
 
-Why not custom Node + Postgres yet: auth, Google OAuth, and hosted Postgres are the slow parts; we do not have multi-tenant business logic that would require a custom API first.
-
-Why not Firebase: we want relational entities (routines, occurrences, bookings) and SQL for availability queries.
+The PWA shell still opens offline. Demo/local state remains in `dayline.v2`.
+Authenticated cloud schedules use optimistic local state, reconnect refresh,
+and row-level realtime updates. Existing local data is imported explicitly as
+private or shared; it is never uploaded silently.
 
 ## Later integrations
 
-| Need | Choice |
-| --- | --- |
-| Identity | Supabase Auth: Google + email |
-| Calendar | Google Calendar API, read-only then two-way |
-| Mail | Transactional provider (Resend or similar) for booking confirmations |
-| Hosting | Vercel (app) + Supabase (data) |
-| Payments | Stripe Checkout for Pro |
-
-## Recurrence
-
-In-house engine in `src/lib/recurrence.ts` (tested). No RRULE library until we need iCal export compatibility.
+- Apple Sign-In before a native App Store release
+- Resend or a similar provider for sending invite emails
+- Google Calendar read-only before two-way sync
+- Vercel for clean routes and preview environments
+- Stripe only after a paid couple feature proves demand

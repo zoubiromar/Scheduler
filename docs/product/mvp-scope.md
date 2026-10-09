@@ -1,36 +1,37 @@
-# MVP scope (locked)
+# Duo MVP scope
 
-Dayline v1 is for **individuals managing personal life**, not teams or sales pipelines.
+Pellia is a private planning space for exactly two people. A solo account can
+prepare a schedule, then an admin invites one partner into the shared space.
 
 ## In scope
 
-| Surface | Behavior |
-| --- | --- |
-| **Today view** | Home screen. Recurring routines, untimed daily checklist, timed events, completion. |
-| **Recurrence** | Daily, weekly, custom weekdays. Optional start/end. Time optional (untimed → checklist-like routine). |
-| **Manual events** | One-off timed items on a day/week calendar. |
-| **Single booking link** | One public page (`/book/:slug`) with weekly availability, buffer, min notice. Guest picks a free slot; host gets a confirmation (email in production; in-app + local record in this slice). |
-| **Local persistence** | Completions and edits survive refresh on the same device. |
+- Google OAuth and email magic-link accounts.
+- One partnership with an admin and one partner.
+- Expiring, revocable invitation links.
+- Personal visible, personal private, and shared schedule items.
+- Assigned, either-partner, and both-partners completion rules.
+- Mirrored Today and 7 AM–midnight Week views.
+- Per-user timezones, realtime schedule updates, and local Pellia import.
+- Account, partnership, admin, schedule-default, privacy, and data settings.
 
-## Explicitly out of scope (this MVP)
+## Privacy and authority
 
-- Google Calendar **two-way** sync (conflicts, duplicates, write-back).
-- Google Calendar **import** (Phase 2, read-only).
-- Apple Calendar, Outlook, Zoom, payments on booking.
-- Multiple booking pages, custom branding, analytics.
-- Team workspaces, couple calendars, AI auto-schedule.
-- Habitica-style RPG gamification (streaks only, later).
-- Native iOS/Android apps.
+- Admin controls partnership membership and partnership-level settings.
+- Admin does not gain access to the partner's private schedule.
+- Members edit their own personal items.
+- Either member can edit shared items.
+- Completions record which partner checked an occurrence.
 
-`.ics` export is optional and not required to ship the Today view.
+## Explicitly deferred
+
+- Apple Sign-In (add before a native App Store wrapper).
+- Google/Apple/Outlook calendar sync.
+- Native iOS and Android clients.
+- Shared expenses, date ideas, check-ins, reactions, goals, and visit countdowns.
+- More than two members or multiple active partnerships.
+- Public booking and paid guest appointments.
 
 ## Success metric
 
-A user opens Dayline on **7 consecutive days**, and in the same session **completes at least one checklist item** and **views timed events**.
-
-## Build slices
-
-1. **This repo slice:** scaffold, Today view, seed data, local persistence, recurrence engine + tests.
-2. **After user tests:** booking confirmations and email.
-3. **Phase 2:** read-only Google Calendar import.
-4. **Phase 3:** two-way Google Calendar with visible source labels and conflict UI.
+Both partners return in the same seven-day period, each completes at least one
+item, and they complete or edit at least one shared commitment together.

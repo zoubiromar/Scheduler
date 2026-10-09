@@ -27,9 +27,9 @@ export default defineConfig({
         navigateFallback: `${base}index.html`,
       },
       manifest: {
-        name: "Dayline",
-        short_name: "Dayline",
-        description: "Routines, daily checklist, and what's on the clock.",
+        name: "Pellia",
+        short_name: "Pellia",
+        description: "A shared day for two.",
         theme_color: "#3f6b58",
         background_color: "#f4efe6",
         display: "standalone",
@@ -48,5 +48,6 @@ export default defineConfig({
   ],
   test: {
     environment: "node",
+    exclude: ["tests/e2e/**", "node_modules/**"],
   },
 });

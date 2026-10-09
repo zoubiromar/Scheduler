@@ -1,32 +1,100 @@
 import { useEffect, useMemo, useState } from "react";
-import type { AppState, CalendarEvent, TaskOccurrenceOverride } from "./types";
+import { useAuth } from "./auth/AuthProvider";
+import {
+  deleteCloudOverride,
+  deleteCloudTag,
+  deleteScheduleItem,
+  setCloudCompletion,
+  upsertCloudOverride,
+  upsertCloudTag,
+  upsertScheduleItem,
+} from "./data/scheduleRepository";
+import { useScheduleSync } from "./data/useScheduleSync";
+import type { CalendarEvent, TaskOccurrenceOverride } from "./types";
 import { TodayView, shiftIso } from "./TodayView";
 import { TasksView } from "./TasksView";
 import { WeekView } from "./WeekView";
-import { loadState, saveState, seedState, STORAGE_KEY } from "./lib/storage";
+import { SettingsView } from "./SettingsView";
+import { seedState, STORAGE_KEY } from "./lib/storage";
+import { withDuoDefaults } from "./lib/duo";
 import { addDays, todayISO } from "./lib/dates";
 import type { RepeatingTask, Tag } from "./types";
+import { usePartnership } from "./partnership/PartnershipProvider";
 
-type Tab = "today" | "week" | "tasks";
+type Tab = "today" | "week" | "tasks" | "settings";
 
 export default function App() {
-  const [state, setState] = useState<AppState>(() => loadState());
+  const auth = useAuth();
+  const partnershipState = usePartnership();
+  const schedule = useScheduleSync();
+  const { state, setState } = schedule;
   const [date, setDate] = useState(todayISO);
   const [tab, setTab] = useState<Tab>("today");
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
   const [editTaskRequested, setEditTaskRequested] = useState<string | null>(null);
-
-  useEffect(() => {
-    saveState(state);
-  }, [state]);
+  const [actionError, setActionError] = useState("");
 
   const today = todayISO();
+  const partnership = partnershipState.partnership;
+  const currentUserId =
+    auth.user?.id ??
+    partnership?.members.find((member) => member.role === partnership.currentRole)
+      ?.profile.id ??
+    "demo-you";
+  const memberIds = partnership?.members.map((member) => member.profile.id) ?? [
+    currentUserId,
+  ];
+
+  useEffect(() => {
+    if (
+      auth.user &&
+      !auth.demoMode &&
+      !partnershipState.loading &&
+      !partnership
+    ) {
+      setTab("settings");
+    }
+  }, [
+    auth.demoMode,
+    auth.user,
+    partnership,
+    partnershipState.loading,
+  ]);
+
+  function runCloud(action: () => Promise<void>) {
+    if (!schedule.cloudEnabled) return;
+    void action().catch((error) =>
+      setActionError(
+        error instanceof Error ? error.message : "The shared schedule could not sync.",
+      ),
+    );
+  }
+
+  function prepareItem<T extends RepeatingTask | CalendarEvent>(item: T): T {
+    if (!partnership) return item;
+    return withDuoDefaults(item, {
+      partnershipId: partnership.id,
+      ownerId: currentUserId,
+      memberIds,
+      scope: "shared",
+      visibility: "partner_visible",
+      completionRule: "assigned",
+      timezone:
+        partnership.members.find((member) => member.profile.id === currentUserId)
+          ?.profile.timezone,
+    });
+  }
 
   function toggleTask(taskId: string, completionDate: string) {
     setState((current) => {
       const exists = current.completions.some(
         (completion) =>
-          completion.taskId === taskId && completion.date === completionDate,
+          completion.taskId === taskId &&
+          completion.date === completionDate &&
+          (!completion.userId || completion.userId === currentUserId),
+      );
+      runCloud(() =>
+        setCloudCompletion(taskId, completionDate, currentUserId, !exists),
       );
       return {
         ...current,
@@ -35,38 +103,89 @@ export default function App() {
               (completion) =>
                 !(
                   completion.taskId === taskId &&
-                  completion.date === completionDate
+                  completion.date === completionDate &&
+                  (!completion.userId || completion.userId === currentUserId)
                 ),
             )
-          : [...current.completions, { taskId, date: completionDate }],
+          : [
+              ...current.completions,
+              { taskId, date: completionDate, userId: currentUserId },
+            ],
       };
     });
   }
 
   function saveEvent(event: CalendarEvent) {
+    const nextEvent = prepareItem(event);
+    if (partnership) {
+      runCloud(() =>
+        upsertScheduleItem(nextEvent, partnership.id, currentUserId),
+      );
+    }
     setState((current) => ({
       ...current,
-      events: [...current.events.filter((entry) => entry.id !== event.id), event],
+      events: [
+        ...current.events.filter((entry) => entry.id !== nextEvent.id),
+        nextEvent,
+      ],
     }));
   }
 
   function toggleEvent(eventId: string) {
-    setState((current) => ({
-      ...current,
-      events: current.events.map((event) =>
-        event.id === eventId ? { ...event, completed: !event.completed } : event,
-      ),
-    }));
+    setState((current) => {
+      const event = current.events.find((entry) => entry.id === eventId);
+      if (!event) return current;
+      const exists = current.completions.some(
+        (completion) =>
+          completion.taskId === eventId &&
+          completion.date === event.date &&
+          completion.userId === currentUserId,
+      );
+      runCloud(() =>
+        setCloudCompletion(eventId, event.date, currentUserId, !exists),
+      );
+      return {
+        ...current,
+        events: current.events.map((entry) =>
+          entry.id === eventId
+            ? { ...entry, completed: !exists }
+            : entry,
+        ),
+        completions: exists
+          ? current.completions.filter(
+              (completion) =>
+                !(
+                  completion.taskId === eventId &&
+                  completion.date === event.date &&
+                  completion.userId === currentUserId
+                ),
+            )
+          : [
+              ...current.completions,
+              { taskId: eventId, date: event.date, userId: currentUserId },
+            ],
+      };
+    });
   }
 
   function saveTask(task: RepeatingTask) {
+    const nextTask = prepareItem(task);
+    if (partnership) {
+      runCloud(() =>
+        upsertScheduleItem(nextTask, partnership.id, currentUserId),
+      );
+    }
     setState((current) => ({
       ...current,
-      tasks: [...current.tasks.filter((entry) => entry.id !== task.id), task],
+      tasks: [
+        ...current.tasks.filter((entry) => entry.id !== nextTask.id),
+        nextTask,
+      ],
     }));
   }
 
   function saveOccurrenceOverride(override: TaskOccurrenceOverride) {
+    runCloud(() => upsertCloudOverride(override, currentUserId));
     setState((current) => ({
       ...current,
       occurrenceOverrides: [
@@ -83,6 +202,7 @@ export default function App() {
   }
 
   function resetOccurrence(taskId: string, originalDate: string) {
+    runCloud(() => deleteCloudOverride(taskId, originalDate));
     setState((current) => ({
       ...current,
       occurrenceOverrides: current.occurrenceOverrides.filter(
@@ -92,9 +212,8 @@ export default function App() {
   }
 
   function skipOccurrence(taskId: string, originalDate: string) {
-    setState((current) => ({
-      ...current,
-      tasks: current.tasks.map((task) =>
+    setState((current) => {
+      const nextTasks = current.tasks.map((task) =>
         task.id === taskId
           ? {
               ...task,
@@ -106,14 +225,31 @@ export default function App() {
               },
             }
           : task,
-      ),
-      occurrenceOverrides: current.occurrenceOverrides.filter(
-        (entry) => !(entry.taskId === taskId && entry.originalDate === originalDate),
-      ),
-    }));
+      );
+      const updatedTask = nextTasks.find((task) => task.id === taskId);
+      if (updatedTask && partnership) {
+        runCloud(() =>
+          upsertScheduleItem(updatedTask, partnership.id, currentUserId),
+        );
+      }
+      runCloud(() => deleteCloudOverride(taskId, originalDate));
+      return {
+        ...current,
+        tasks: nextTasks,
+        occurrenceOverrides: current.occurrenceOverrides.filter(
+          (entry) =>
+            !(entry.taskId === taskId && entry.originalDate === originalDate),
+        ),
+      };
+    });
   }
 
   function addTag(tag: Tag) {
+    if (partnership) {
+      runCloud(() =>
+        upsertCloudTag(tag, partnership.id, currentUserId),
+      );
+    }
     setState((current) =>
       current.tags.some(
         (existing) => existing.name.toLowerCase() === tag.name.toLowerCase(),
@@ -124,13 +260,22 @@ export default function App() {
   }
 
   function updateTag(tagId: string, patch: Partial<Pick<Tag, "name" | "color">>) {
-    setState((current) => ({
-      ...current,
-      tags: current.tags.map((tag) => (tag.id === tagId ? { ...tag, ...patch } : tag)),
-    }));
+    setState((current) => {
+      const nextTags = current.tags.map((tag) =>
+        tag.id === tagId ? { ...tag, ...patch } : tag,
+      );
+      const updated = nextTags.find((tag) => tag.id === tagId);
+      if (updated && partnership) {
+        runCloud(() =>
+          upsertCloudTag(updated, partnership.id, currentUserId),
+        );
+      }
+      return { ...current, tags: nextTags };
+    });
   }
 
   function deleteTag(tagId: string) {
+    runCloud(() => deleteCloudTag(tagId));
     setState((current) => ({
       ...current,
       tags: current.tags.filter((tag) => tag.id !== tagId),
@@ -163,10 +308,13 @@ export default function App() {
   }, [state.tags, state.tasks, state.events, state.occurrenceOverrides]);
 
   return (
-    <div>
-      <header className="app-header">
-        <h1>Dayline</h1>
-        <nav className="nav">
+    <div className="duo-app-shell">
+      <header className="app-header app-sidebar">
+        <div className="app-brand">
+          <h1>Pellia</h1>
+          <span>{partnership?.name ?? "Your space"}</span>
+        </div>
+        <nav className="nav app-nav">
           <button className={tab === "today" ? "active" : ""} type="button" onClick={() => setTab("today")}>
             Today
           </button>
@@ -183,8 +331,69 @@ export default function App() {
           >
             Tasks
           </button>
+          <button
+            className={tab === "settings" ? "active" : ""}
+            type="button"
+            onClick={() => setTab("settings")}
+          >
+            Settings
+          </button>
         </nav>
+        <div className="sidebar-members" aria-label="Partnership members">
+          {partnership?.members.map((member) => (
+            <span
+              title={member.profile.displayName}
+              key={member.profile.id}
+              style={{ "--member-color": member.color } as React.CSSProperties}
+            >
+              {member.profile.displayName.slice(0, 1)}
+            </span>
+          ))}
+        </div>
       </header>
+
+      <main className="app-workspace">
+      {(!schedule.online ||
+        schedule.loading ||
+        schedule.error ||
+        actionError ||
+        partnershipState.error) && (
+        <div
+          className={`sync-banner${
+            schedule.error || actionError || partnershipState.error ? " error" : ""
+          }`}
+          role="status"
+        >
+          {!schedule.online
+            ? "You are offline. Changes stay on this device until Pellia reconnects."
+            : schedule.loading
+            ? "Syncing your shared day…"
+            : schedule.error || actionError || partnershipState.error}
+        </div>
+      )}
+
+      {schedule.importAvailable && (
+        <aside className="import-banner">
+          <div>
+            <strong>Bring your existing Pellia with you?</strong>
+            <span>Your local items have not been uploaded.</span>
+          </div>
+          <button
+            className="ghost"
+            type="button"
+            onClick={() => void schedule.importLocal("personal")}
+          >
+            Import privately
+          </button>
+          <button
+            className="primary"
+            type="button"
+            onClick={() => void schedule.importLocal("shared")}
+          >
+            Import as shared
+          </button>
+        </aside>
+      )}
 
       {tab === "today" && (
         <TodayView
@@ -196,12 +405,13 @@ export default function App() {
           onToggleEvent={toggleEvent}
           onSaveEvent={saveEvent}
           onSaveTask={saveTask}
-          onDeleteEvent={(eventId) =>
+          onDeleteEvent={(eventId) => {
+            runCloud(() => deleteScheduleItem(eventId));
             setState((current) => ({
               ...current,
               events: current.events.filter((event) => event.id !== eventId),
-            }))
-          }
+            }));
+          }}
           onSaveOccurrenceOverride={saveOccurrenceOverride}
           onSkipOccurrence={skipOccurrence}
           onResetOccurrence={resetOccurrence}
@@ -240,15 +450,16 @@ export default function App() {
           tagUsage={tagUsage}
           onEditorClosed={() => setEditTaskRequested(null)}
           onSaveTask={saveTask}
-          onDeleteTask={(taskId) =>
+          onDeleteTask={(taskId) => {
+            runCloud(() => deleteScheduleItem(taskId));
             setState((current) => ({
               ...current,
               tasks: current.tasks.filter((task) => task.id !== taskId),
               occurrenceOverrides: current.occurrenceOverrides.filter(
                 (override) => override.taskId !== taskId,
               ),
-            }))
-          }
+            }));
+          }}
           onCreateTag={addTag}
           onUpdateTag={updateTag}
           onDeleteTag={deleteTag}
@@ -259,6 +470,44 @@ export default function App() {
           }}
         />
       )}
+
+      {tab === "settings" && (
+        <SettingsView
+          importAvailable={schedule.importAvailable}
+          onImport={schedule.importLocal}
+          onResetDemo={() => {
+            localStorage.removeItem(STORAGE_KEY);
+            setState(seedState());
+            setSelectedTagId(null);
+          }}
+        />
+      )}
+      </main>
+
+      <nav className="mobile-bottom-nav" aria-label="Primary navigation">
+        {(["today", "week", "tasks", "settings"] as Tab[]).map((entry) => (
+          <button
+            className={tab === entry ? "active" : ""}
+            type="button"
+            key={entry}
+            onClick={() => {
+              if (entry === "tasks") setEditTaskRequested(null);
+              setTab(entry);
+            }}
+          >
+            <span aria-hidden="true">
+              {entry === "today"
+                ? "●"
+                : entry === "week"
+                  ? "▦"
+                  : entry === "tasks"
+                    ? "✓"
+                    : "⚙"}
+            </span>
+            {entry[0].toUpperCase() + entry.slice(1)}
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }

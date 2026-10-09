@@ -48,6 +48,10 @@ begin
 end;
 $$;
 
+revoke all on function public.remove_partnership_member(uuid) from public, anon;
+revoke all on function public.leave_partnership() from public, anon;
+revoke all on function public.dissolve_partnership() from public, anon;
+
 grant execute on function public.remove_partnership_member(uuid) to authenticated;
 grant execute on function public.leave_partnership() to authenticated;
 grant execute on function public.dissolve_partnership() to authenticated;

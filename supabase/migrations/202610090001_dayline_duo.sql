@@ -500,12 +500,26 @@ create policy "members remove own completion" on public.occurrence_completions f
 create policy "preferences self read" on public.user_preferences for select using (user_id = auth.uid());
 create policy "preferences self update" on public.user_preferences for update using (user_id = auth.uid()) with check (user_id = auth.uid());
 
+revoke all on function public.create_partnership(text) from public, anon;
+revoke all on function public.create_partner_invite(text) from public, anon;
+revoke all on function public.get_invite_details(text) from public;
+revoke all on function public.accept_partner_invite(text) from public, anon;
+revoke all on function public.revoke_partner_invite(uuid) from public, anon;
+revoke all on function public.transfer_partnership_admin(uuid) from public, anon;
+
 grant execute on function public.create_partnership(text) to authenticated;
 grant execute on function public.create_partner_invite(text) to authenticated;
 grant execute on function public.get_invite_details(text) to anon, authenticated;
 grant execute on function public.accept_partner_invite(text) to authenticated;
 grant execute on function public.revoke_partner_invite(uuid) to authenticated;
 grant execute on function public.transfer_partnership_admin(uuid) to authenticated;
+
+revoke update on public.partnership_members from authenticated;
+grant update (color) on public.partnership_members to authenticated;
+revoke update on public.partnerships from authenticated;
+grant update (name) on public.partnerships to authenticated;
+revoke update on public.profiles from authenticated;
+grant update (display_name, avatar_url, timezone) on public.profiles to authenticated;
 
 alter publication supabase_realtime add table public.schedule_items;
 alter publication supabase_realtime add table public.schedule_item_assignees;

@@ -35,4 +35,16 @@ describe("Supabase duo security contract", () => {
       "create policy \"members remove own completion\"",
     );
   });
+
+  it("restricts role, partnership, and profile updates to safe columns", () => {
+    expect(migration).toContain(
+      "revoke update on public.partnership_members from authenticated",
+    );
+    expect(migration).toContain(
+      "grant update (color) on public.partnership_members to authenticated",
+    );
+    expect(migration).toContain(
+      "grant update (display_name, avatar_url, timezone) on public.profiles",
+    );
+  });
 });

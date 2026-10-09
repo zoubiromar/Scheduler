@@ -55,6 +55,7 @@ export function itemLane(
   currentUserId: string,
 ): DuoLane {
   if ((item.scope ?? "personal") === "shared") return "shared";
+  if (!item.ownerId) return "mine";
   return item.ownerId === currentUserId ? "mine" : "partner";
 }
 

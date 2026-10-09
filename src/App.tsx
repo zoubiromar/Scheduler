@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "./auth/AuthProvider";
 import {
   deleteCloudOverride,
@@ -14,13 +14,14 @@ import type { CalendarEvent, TaskOccurrenceOverride } from "./types";
 import { TodayView, shiftIso } from "./TodayView";
 import { TasksView } from "./TasksView";
 import { WeekView } from "./WeekView";
+import { SettingsView } from "./SettingsView";
 import { seedState, STORAGE_KEY } from "./lib/storage";
 import { withDuoDefaults } from "./lib/duo";
 import { addDays, todayISO } from "./lib/dates";
 import type { RepeatingTask, Tag } from "./types";
 import { usePartnership } from "./partnership/PartnershipProvider";
 
-type Tab = "today" | "week" | "tasks";
+type Tab = "today" | "week" | "tasks" | "settings";
 
 export default function App() {
   const auth = useAuth();
@@ -43,6 +44,22 @@ export default function App() {
   const memberIds = partnership?.members.map((member) => member.profile.id) ?? [
     currentUserId,
   ];
+
+  useEffect(() => {
+    if (
+      auth.user &&
+      !auth.demoMode &&
+      !partnershipState.loading &&
+      !partnership
+    ) {
+      setTab("settings");
+    }
+  }, [
+    auth.demoMode,
+    auth.user,
+    partnership,
+    partnershipState.loading,
+  ]);
 
   function runCloud(action: () => Promise<void>) {
     if (!schedule.cloudEnabled) return;
@@ -118,16 +135,35 @@ export default function App() {
     setState((current) => {
       const event = current.events.find((entry) => entry.id === eventId);
       if (!event) return current;
+      const exists = current.completions.some(
+        (completion) =>
+          completion.taskId === eventId &&
+          completion.date === event.date &&
+          completion.userId === currentUserId,
+      );
       runCloud(() =>
-        setCloudCompletion(eventId, event.date, currentUserId, !event.completed),
+        setCloudCompletion(eventId, event.date, currentUserId, !exists),
       );
       return {
         ...current,
         events: current.events.map((entry) =>
           entry.id === eventId
-            ? { ...entry, completed: !entry.completed }
+            ? { ...entry, completed: !exists }
             : entry,
         ),
+        completions: exists
+          ? current.completions.filter(
+              (completion) =>
+                !(
+                  completion.taskId === eventId &&
+                  completion.date === event.date &&
+                  completion.userId === currentUserId
+                ),
+            )
+          : [
+              ...current.completions,
+              { taskId: eventId, date: event.date, userId: currentUserId },
+            ],
       };
     });
   }
@@ -272,10 +308,13 @@ export default function App() {
   }, [state.tags, state.tasks, state.events, state.occurrenceOverrides]);
 
   return (
-    <div>
-      <header className="app-header">
-        <h1>Dayline</h1>
-        <nav className="nav">
+    <div className="duo-app-shell">
+      <header className="app-header app-sidebar">
+        <div className="app-brand">
+          <h1>Dayline</h1>
+          <span>{partnership?.name ?? "Your space"}</span>
+        </div>
+        <nav className="nav app-nav">
           <button className={tab === "today" ? "active" : ""} type="button" onClick={() => setTab("today")}>
             Today
           </button>
@@ -292,9 +331,28 @@ export default function App() {
           >
             Tasks
           </button>
+          <button
+            className={tab === "settings" ? "active" : ""}
+            type="button"
+            onClick={() => setTab("settings")}
+          >
+            Settings
+          </button>
         </nav>
+        <div className="sidebar-members" aria-label="Partnership members">
+          {partnership?.members.map((member) => (
+            <span
+              title={member.profile.displayName}
+              key={member.profile.id}
+              style={{ "--member-color": member.color } as React.CSSProperties}
+            >
+              {member.profile.displayName.slice(0, 1)}
+            </span>
+          ))}
+        </div>
       </header>
 
+      <main className="app-workspace">
       {(!schedule.online ||
         schedule.loading ||
         schedule.error ||
@@ -412,6 +470,44 @@ export default function App() {
           }}
         />
       )}
+
+      {tab === "settings" && (
+        <SettingsView
+          importAvailable={schedule.importAvailable}
+          onImport={schedule.importLocal}
+          onResetDemo={() => {
+            localStorage.removeItem(STORAGE_KEY);
+            setState(seedState());
+            setSelectedTagId(null);
+          }}
+        />
+      )}
+      </main>
+
+      <nav className="mobile-bottom-nav" aria-label="Primary navigation">
+        {(["today", "week", "tasks", "settings"] as Tab[]).map((entry) => (
+          <button
+            className={tab === entry ? "active" : ""}
+            type="button"
+            key={entry}
+            onClick={() => {
+              if (entry === "tasks") setEditTaskRequested(null);
+              setTab(entry);
+            }}
+          >
+            <span aria-hidden="true">
+              {entry === "today"
+                ? "●"
+                : entry === "week"
+                  ? "▦"
+                  : entry === "tasks"
+                    ? "✓"
+                    : "⚙"}
+            </span>
+            {entry[0].toUpperCase() + entry.slice(1)}
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }

@@ -31,6 +31,14 @@ export interface PartnerInvite {
   expiresAt: string;
 }
 
+export interface UserPreferences {
+  weekStartsOn: number;
+  defaultScope: "personal" | "shared";
+  defaultVisibility: "private" | "partner_visible";
+  defaultCompletionRule: "assigned" | "either" | "both";
+  dayStartHour: number;
+}
+
 function requireSupabase() {
   if (!supabase) throw new Error("Supabase is not configured.");
   return supabase;
@@ -190,5 +198,62 @@ export async function updatePartnershipName(
     .from("partnerships")
     .update({ name: name.trim() })
     .eq("id", partnershipId);
+  if (error) throw error;
+}
+
+export async function loadUserPreferences(
+  userId: string,
+): Promise<UserPreferences> {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("user_preferences")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+  if (error) throw error;
+  return {
+    weekStartsOn: data.week_starts_on,
+    defaultScope: data.default_scope,
+    defaultVisibility: data.default_visibility,
+    defaultCompletionRule: data.default_completion_rule,
+    dayStartHour: data.day_start_hour,
+  };
+}
+
+export async function updateUserPreferences(
+  userId: string,
+  preferences: UserPreferences,
+): Promise<void> {
+  const client = requireSupabase();
+  const { error } = await client
+    .from("user_preferences")
+    .update({
+      week_starts_on: preferences.weekStartsOn,
+      default_scope: preferences.defaultScope,
+      default_visibility: preferences.defaultVisibility,
+      default_completion_rule: preferences.defaultCompletionRule,
+      day_start_hour: preferences.dayStartHour,
+    })
+    .eq("user_id", userId);
+  if (error) throw error;
+}
+
+export async function removePartnershipMember(userId: string): Promise<void> {
+  const client = requireSupabase();
+  const { error } = await client.rpc("remove_partnership_member", {
+    member_id: userId,
+  });
+  if (error) throw error;
+}
+
+export async function leavePartnership(): Promise<void> {
+  const client = requireSupabase();
+  const { error } = await client.rpc("leave_partnership");
+  if (error) throw error;
+}
+
+export async function dissolvePartnership(): Promise<void> {
+  const client = requireSupabase();
+  const { error } = await client.rpc("dissolve_partnership");
   if (error) throw error;
 }

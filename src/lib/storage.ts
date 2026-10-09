@@ -1,6 +1,7 @@
 import type {
   AppState,
   CalendarEvent,
+  DuoItemFields,
   Recurrence,
   RepeatingTask,
   Weekday,
@@ -12,6 +13,27 @@ const LEGACY_KEY = "dayline.v1";
 
 export const seedState = (): AppState => {
   const today = todayISO();
+  const mine = {
+    partnershipId: "demo-partnership",
+    ownerId: "demo-you",
+    scope: "personal",
+    visibility: "partner_visible",
+    assigneeIds: ["demo-you"],
+    completionRule: "assigned",
+    anchorTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  } satisfies DuoItemFields;
+  const partner = {
+    ...mine,
+    ownerId: "demo-partner",
+    assigneeIds: ["demo-partner"],
+  } satisfies DuoItemFields;
+  const together = {
+    ...mine,
+    scope: "shared",
+    ownerId: "demo-you",
+    assigneeIds: ["demo-you", "demo-partner"],
+    completionRule: "either",
+  } satisfies DuoItemFields;
   return {
     tags: [
       { id: "tag-personal", name: "Personal", color: "#c45c3e" },
@@ -29,6 +51,7 @@ export const seedState = (): AppState => {
           startDate: "2026-01-05",
         },
         tagIds: ["tag-personal"],
+        ...mine,
       },
       {
         id: "task-wind-down",
@@ -42,6 +65,7 @@ export const seedState = (): AppState => {
           startDate: "2026-01-01",
         },
         tagIds: ["tag-personal"],
+        ...together,
       },
       {
         id: "task-sunday-reset",
@@ -50,6 +74,8 @@ export const seedState = (): AppState => {
         durationMinutes: 90,
         recurrence: { kind: "weekdays", days: [0], startDate: "2026-01-04" },
         tagIds: ["tag-personal"],
+        ...together,
+        completionRule: "both",
       },
       ...["Drink water", "Inbox to zero", "Walk outside"].map(
         (title, index): RepeatingTask => ({
@@ -62,6 +88,7 @@ export const seedState = (): AppState => {
             startDate: "2026-01-01",
           },
           tagIds: [],
+          ...(index % 2 === 0 ? mine : partner),
         }),
       ),
       {
@@ -76,6 +103,7 @@ export const seedState = (): AppState => {
           startDate: today,
         },
         tagIds: ["tag-personal"],
+        ...partner,
       },
     ],
     completions: [],
@@ -89,6 +117,7 @@ export const seedState = (): AppState => {
         durationMinutes: 90,
         source: "manual",
         tagIds: ["tag-focus"],
+        ...mine,
       },
       {
         id: "event-dinner",
@@ -98,6 +127,7 @@ export const seedState = (): AppState => {
         durationMinutes: 90,
         source: "booking",
         tagIds: ["tag-personal"],
+        ...together,
       },
     ],
     goals: [

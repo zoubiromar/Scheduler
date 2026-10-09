@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
+import { DuoTodayBoard } from "./DuoTodayBoard";
 import { EventEditor } from "./EventEditor";
 import { NewItemEditor } from "./NewItemEditor";
 import { OccurrenceEditor } from "./OccurrenceEditor";
 import { TagFilter } from "./TagFilter";
-import { TagPill } from "./TasksView";
-import { addDays, formatDisplayDate, formatTime } from "./lib/dates";
+import { addDays, formatDisplayDate } from "./lib/dates";
 import { resolveTaskOccurrences } from "./lib/occurrences";
 import type {
   AppState,
@@ -65,47 +65,11 @@ export function TodayView({
     () => resolveTaskOccurrences(state.tasks, state.occurrenceOverrides, date),
     [state.tasks, state.occurrenceOverrides, date],
   );
-  const untimedOccurrences = occurrencesToday.filter((occurrence) => !occurrence.startTime);
-  const timedOccurrences = occurrencesToday.filter((occurrence) => occurrence.startTime);
   const events = state.events.filter(
     (event) =>
       event.date === date &&
       (selectedTagId === null || event.tagIds.includes(selectedTagId)),
   );
-  const untimedEvents = events.filter((event) => !event.startTime);
-  const timedEvents = events.filter((event) => event.startTime);
-  const completionKeys = new Set(
-    state.completions.map((completion) => `${completion.taskId}:${completion.date}`),
-  );
-  const timeline = [
-    ...timedOccurrences.map((occurrence) => ({
-      kind: "task" as const,
-      id: occurrence.key,
-      occurrence,
-      time: occurrence.startTime!,
-      duration: occurrence.durationMinutes ?? 0,
-      title: occurrence.title,
-      tagIds: occurrence.tagIds,
-      completed: completionKeys.has(occurrence.key),
-    })),
-    ...timedEvents.map((event) => ({
-      kind: "event" as const,
-      id: event.id,
-      event,
-      time: event.startTime!,
-      duration: event.durationMinutes ?? 0,
-      title: event.title,
-      tagIds: event.tagIds,
-      completed: Boolean(event.completed),
-    })),
-  ].sort((a, b) => a.time.localeCompare(b.time));
-
-  const done = allOccurrencesToday.filter((occurrence) =>
-    completionKeys.has(occurrence.key),
-  ).length;
-  const percent =
-    allOccurrencesToday.length === 0 ? 0 : Math.round((done / allOccurrencesToday.length) * 100);
-
   const editingEvent = state.events.find((event) => event.id === editingEventId);
   const editingOccurrence = allOccurrencesToday.find(
     (occurrence) => occurrence.key === editingOccurrenceKey,
@@ -142,15 +106,6 @@ export function TodayView({
       </div>
 
       <TagFilter tags={state.tags} selectedId={selectedTagId} onChange={onFilterChange} />
-      {allOccurrencesToday.length > 0 && (
-        <div
-          className="progress-track"
-          aria-label={`${done} of ${allOccurrencesToday.length} repeating tasks complete`}
-          title={`${done} of ${allOccurrencesToday.length} complete`}
-        >
-          <span style={{ width: `${percent}%` }} />
-        </div>
-      )}
 
       {editingOccurrence && (
         <OccurrenceEditor
@@ -212,121 +167,21 @@ export function TodayView({
         />
       )}
 
-      <section>
-        <h2>Anytime</h2>
-        {untimedOccurrences.length === 0 && untimedEvents.length === 0 ? (
-          <p className="empty">No untimed tasks match this day and filter.</p>
-        ) : (
-          <>
-          {untimedOccurrences.map((occurrence) => (
-            <div
-              className={`card${completionKeys.has(occurrence.key) ? " completed" : ""}`}
-              key={occurrence.key}
-            >
-              <button
-                className={`check${completionKeys.has(occurrence.key) ? " on" : ""}`}
-                type="button"
-                aria-label={`Toggle ${occurrence.title}`}
-                onClick={() => onToggleTask(occurrence.taskId, occurrence.originalDate)}
-              />
-              <div className="card-content">
-                <div>{occurrence.title}</div>
-                {occurrence.notes && <div className="meta">{occurrence.notes}</div>}
-                <TagList ids={occurrence.tagIds} state={state} />
-              </div>
-              <button
-                className="ghost card-action"
-                type="button"
-                onClick={() => {
-                  setAddingItem(false);
-                  setEditingOccurrenceKey(occurrence.key);
-                }}
-              >
-                Edit
-              </button>
-            </div>
-          ))}
-          {untimedEvents.map((event) => (
-            <div className={`card${event.completed ? " completed" : ""}`} key={event.id}>
-              <button
-                className={`check${event.completed ? " on" : ""}`}
-                type="button"
-                aria-label={`Toggle ${event.title}`}
-                onClick={() => onToggleEvent(event.id)}
-              />
-              <div className="card-content">
-                <div>{event.title}</div>
-                <TagList ids={event.tagIds} state={state} />
-              </div>
-              <button
-                className="ghost card-action"
-                type="button"
-                onClick={() => {
-                  setAddingItem(false);
-                  setEditingEventId(event.id);
-                }}
-              >
-                Edit
-              </button>
-            </div>
-          ))}
-          </>
-        )}
-      </section>
-
-      <section>
-        <h2>On the clock</h2>
-        {timeline.length === 0 ? (
-          <p className="empty">Nothing timed. Add an event below.</p>
-        ) : (
-          timeline.map((item) => (
-            <div className={`card${item.completed ? " completed" : ""}`} key={`${item.kind}-${item.id}`}>
-              <button
-                className={`check${item.completed ? " on" : ""}`}
-                type="button"
-                aria-label={`Mark ${item.title} ${item.completed ? "incomplete" : "complete"}`}
-                onClick={() =>
-                  item.kind === "task"
-                    ? onToggleTask(item.occurrence.taskId, item.occurrence.originalDate)
-                    : onToggleEvent(item.id)
-                }
-              />
-              <div className="time">{formatTime(item.time)}</div>
-              <div className="card-content">
-                <div>{item.title}</div>
-                <div className="meta">{item.duration} min</div>
-                <TagList ids={item.tagIds} state={state} />
-              </div>
-              <button
-                className="ghost card-action"
-                type="button"
-                onClick={() => {
-                  setAddingItem(false);
-                  if (item.kind === "task") {
-                    setEditingOccurrenceKey(item.occurrence.key);
-                  } else {
-                    setEditingEventId(item.id);
-                  }
-                }}
-              >
-                Edit
-              </button>
-            </div>
-          ))
-        )}
-      </section>
-    </div>
-  );
-}
-
-function TagList({ ids, state }: { ids: string[]; state: AppState }) {
-  if (ids.length === 0) return null;
-  return (
-    <div className="tag-list">
-      {ids.map((id) => {
-        const tag = state.tags.find((candidate) => candidate.id === id);
-        return tag ? <TagPill tag={tag} key={id} /> : null;
-      })}
+      <DuoTodayBoard
+        state={state}
+        occurrences={occurrencesToday}
+        events={events}
+        onToggleTask={onToggleTask}
+        onToggleEvent={onToggleEvent}
+        onEditOccurrence={(key) => {
+          setAddingItem(false);
+          setEditingOccurrenceKey(key);
+        }}
+        onEditEvent={(eventId) => {
+          setAddingItem(false);
+          setEditingEventId(eventId);
+        }}
+      />
     </div>
   );
 }

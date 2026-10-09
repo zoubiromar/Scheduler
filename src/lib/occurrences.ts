@@ -1,7 +1,11 @@
-import type { RepeatingTask, TaskOccurrenceOverride } from "../types";
+import type {
+  DuoItemFields,
+  RepeatingTask,
+  TaskOccurrenceOverride,
+} from "../types";
 import { occursOn } from "./recurrence";
 
-export interface ResolvedTaskOccurrence {
+export interface ResolvedTaskOccurrence extends DuoItemFields {
   key: string;
   taskId: string;
   originalDate: string;
@@ -52,23 +56,40 @@ export function resolveTaskOccurrences(
       startTime: task.startTime,
       durationMinutes: task.durationMinutes,
       tagIds: task.tagIds,
+      partnershipId: task.partnershipId,
+      ownerId: task.ownerId,
+      scope: task.scope,
+      visibility: task.visibility,
+      assigneeIds: task.assigneeIds,
+      completionRule: task.completionRule,
+      anchorTimezone: task.anchorTimezone,
       isOverride: false,
     }));
 
   const changed: ResolvedTaskOccurrence[] = [...overridesByOriginal.values()]
     .filter((override) => !override.cancelled && override.date === date)
-    .map((override) => ({
-      key: `${override.taskId}:${override.originalDate}`,
-      taskId: override.taskId,
-      originalDate: override.originalDate,
-      date: override.date,
-      title: override.title,
-      notes: override.notes,
-      startTime: override.startTime,
-      durationMinutes: override.durationMinutes,
-      tagIds: override.tagIds,
-      isOverride: true,
-    }));
+    .map((override) => {
+      const task = tasksById.get(override.taskId)!;
+      return {
+        key: `${override.taskId}:${override.originalDate}`,
+        taskId: override.taskId,
+        originalDate: override.originalDate,
+        date: override.date,
+        title: override.title,
+        notes: override.notes,
+        startTime: override.startTime,
+        durationMinutes: override.durationMinutes,
+        tagIds: override.tagIds,
+        partnershipId: task.partnershipId,
+        ownerId: task.ownerId,
+        scope: task.scope,
+        visibility: task.visibility,
+        assigneeIds: task.assigneeIds,
+        completionRule: task.completionRule,
+        anchorTimezone: task.anchorTimezone,
+        isOverride: true,
+      };
+    });
 
   return [...generated, ...changed];
 }

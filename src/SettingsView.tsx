@@ -158,7 +158,9 @@ export function SettingsView({
           onSubmit={(event) => {
             event.preventDefault();
             void run(
-              () => createPartnership(partnershipName),
+              async () => {
+                await createPartnership(partnershipName);
+              },
               "Your partnership is ready.",
             );
           }}

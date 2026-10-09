@@ -22,6 +22,7 @@ interface DuoTodayBoardProps {
 }
 
 interface DayItem extends DuoItemFields {
+  id: string;
   key: string;
   sourceId: string;
   completionDate: string;
@@ -59,6 +60,7 @@ export function DuoTodayBoard({
     () => [
       ...occurrences.map((occurrence) => ({
         ...occurrence,
+        id: occurrence.taskId,
         kind: "task" as const,
         sourceId: occurrence.taskId,
         completionDate: occurrence.originalDate,

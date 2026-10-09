@@ -145,7 +145,7 @@ export function WeekView({
           const rawItems: Array<Omit<WeekItem, "overlapLane">> = [
             ...occurrences.map((occurrence) => {
               const status = completionState(
-                occurrence,
+                { ...occurrence, id: occurrence.taskId },
                 occurrence.originalDate,
                 state.completions,
                 memberIds,

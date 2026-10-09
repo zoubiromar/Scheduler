@@ -146,7 +146,7 @@ for each row execute function public.set_updated_at();
 create or replace function public.handle_new_user()
 returns trigger
 security definer
-set search_path = public
+set search_path = public, extensions
 language plpgsql as $$
 begin
   insert into public.profiles (id, display_name, avatar_url, timezone)
@@ -171,7 +171,7 @@ create or replace function public.is_partnership_member(target_partnership uuid)
 returns boolean
 stable
 security definer
-set search_path = public
+set search_path = public, extensions
 language sql as $$
   select exists (
     select 1 from public.partnership_members
@@ -183,7 +183,7 @@ create or replace function public.is_partnership_admin(target_partnership uuid)
 returns boolean
 stable
 security definer
-set search_path = public
+set search_path = public, extensions
 language sql as $$
   select exists (
     select 1 from public.partnership_members
@@ -196,7 +196,7 @@ $$;
 create or replace function public.create_partnership(partnership_name text default 'Our Pellia')
 returns uuid
 security definer
-set search_path = public
+set search_path = public, extensions
 language plpgsql as $$
 declare
   new_id uuid;
@@ -219,7 +219,7 @@ $$;
 create or replace function public.create_partner_invite(invited_email text default null)
 returns table(invite_id uuid, invite_token text, expires_at timestamptz)
 security definer
-set search_path = public
+set search_path = public, extensions
 language plpgsql as $$
 declare
   member_partnership uuid;
@@ -261,7 +261,7 @@ returns table(
   status text
 )
 security definer
-set search_path = public
+set search_path = public, extensions
 language sql as $$
   select
     i.id,
@@ -280,7 +280,7 @@ $$;
 create or replace function public.accept_partner_invite(invite_token text)
 returns uuid
 security definer
-set search_path = public
+set search_path = public, extensions
 language plpgsql as $$
 declare
   invite_row public.partnership_invites;
@@ -315,7 +315,7 @@ $$;
 create or replace function public.revoke_partner_invite(invite_id uuid)
 returns void
 security definer
-set search_path = public
+set search_path = public, extensions
 language plpgsql as $$
 begin
   update public.partnership_invites i
@@ -329,7 +329,7 @@ $$;
 create or replace function public.transfer_partnership_admin(next_admin uuid)
 returns void
 security definer
-set search_path = public
+set search_path = public, extensions
 language plpgsql as $$
 declare
   target_partnership uuid;

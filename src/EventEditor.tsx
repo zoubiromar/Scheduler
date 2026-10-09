@@ -1,6 +1,13 @@
 import { useState } from "react";
+import { DuoItemSettings } from "./DuoItemSettings";
 import { TagChoices } from "./TagChoices";
-import type { CalendarEvent, Tag } from "./types";
+import type {
+  CalendarEvent,
+  CompletionRule,
+  ItemScope,
+  ItemVisibility,
+  Tag,
+} from "./types";
 
 interface EventEditorProps {
   date: string;
@@ -27,6 +34,14 @@ export function EventEditor({
   const [startTime, setStartTime] = useState(event?.startTime ?? "15:00");
   const [duration, setDuration] = useState(event?.durationMinutes ?? 60);
   const [tagIds, setTagIds] = useState(event?.tagIds ?? []);
+  const [scope, setScope] = useState<ItemScope>(event?.scope ?? "shared");
+  const [visibility, setVisibility] = useState<ItemVisibility>(
+    event?.visibility ?? "partner_visible",
+  );
+  const [completionRule, setCompletionRule] = useState<CompletionRule>(
+    event?.completionRule ?? "assigned",
+  );
+  const [assigneeIds, setAssigneeIds] = useState(event?.assigneeIds ?? []);
 
   function save() {
     if (!title.trim()) return;
@@ -39,6 +54,15 @@ export function EventEditor({
       source: event?.source ?? "manual",
       tagIds,
       completed: event?.completed ?? false,
+      ownerId: event?.ownerId,
+      partnershipId: event?.partnershipId,
+      scope,
+      visibility,
+      completionRule,
+      assigneeIds: assigneeIds.length > 0 ? assigneeIds : undefined,
+      anchorTimezone:
+        event?.anchorTimezone ??
+        Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
     if (!event) {
       setTitle("");
@@ -92,6 +116,16 @@ export function EventEditor({
         selected={tagIds}
         onChange={setTagIds}
         onCreateTag={onCreateTag}
+      />
+      <DuoItemSettings
+        scope={scope}
+        visibility={visibility}
+        completionRule={completionRule}
+        assigneeIds={assigneeIds}
+        onScopeChange={setScope}
+        onVisibilityChange={setVisibility}
+        onCompletionRuleChange={setCompletionRule}
+        onAssigneeIdsChange={setAssigneeIds}
       />
       <div className="editor-actions">
         {event && onDelete && (

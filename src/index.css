@@ -326,7 +326,8 @@ button:disabled {
 
 .field > span,
 .recurrence-editor legend,
-.tag-picker legend {
+.tag-picker legend,
+.duo-item-settings legend {
   color: var(--muted);
   font-size: 0.82rem;
   letter-spacing: 0.05em;
@@ -347,11 +348,43 @@ button:disabled {
 }
 
 .recurrence-editor,
-.tag-picker {
+.tag-picker,
+.duo-item-settings {
   border: 1px solid var(--line);
   border-radius: 16px;
   margin: 4px 0 16px;
   padding: 14px;
+}
+
+.field select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 9px 10px;
+}
+
+.compact-field {
+  margin-bottom: 0;
+}
+
+.assignee-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.assignee-row button {
+  border: 1px solid var(--member-color);
+  border-radius: 999px;
+  background: #fff;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.assignee-row button.selected {
+  background: var(--member-color);
+  color: #fff;
 }
 
 .segmented {
@@ -1097,6 +1130,20 @@ button:disabled {
   min-height: 70vh;
   color: var(--muted);
   place-items: center;
+}
+
+.sync-banner {
+  border-radius: 10px;
+  background: var(--sage-soft);
+  color: var(--sage);
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+}
+
+.sync-banner.error {
+  background: color-mix(in srgb, var(--coral) 12%, white);
+  color: var(--coral);
 }
 
 @media (max-width: 760px) {

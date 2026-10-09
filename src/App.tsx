@@ -295,17 +295,46 @@ export default function App() {
         </nav>
       </header>
 
-      {(schedule.loading || schedule.error || actionError || partnershipState.error) && (
+      {(!schedule.online ||
+        schedule.loading ||
+        schedule.error ||
+        actionError ||
+        partnershipState.error) && (
         <div
           className={`sync-banner${
             schedule.error || actionError || partnershipState.error ? " error" : ""
           }`}
           role="status"
         >
-          {schedule.loading
+          {!schedule.online
+            ? "You are offline. Changes stay on this device until Dayline reconnects."
+            : schedule.loading
             ? "Syncing your shared day…"
             : schedule.error || actionError || partnershipState.error}
         </div>
+      )}
+
+      {schedule.importAvailable && (
+        <aside className="import-banner">
+          <div>
+            <strong>Bring your existing Dayline with you?</strong>
+            <span>Your local items have not been uploaded.</span>
+          </div>
+          <button
+            className="ghost"
+            type="button"
+            onClick={() => void schedule.importLocal("personal")}
+          >
+            Import privately
+          </button>
+          <button
+            className="primary"
+            type="button"
+            onClick={() => void schedule.importLocal("shared")}
+          >
+            Import as shared
+          </button>
+        </aside>
       )}
 
       {tab === "today" && (

@@ -15,6 +15,7 @@ export interface ScheduleSyncState {
   setState: Dispatch<SetStateAction<AppState>>;
   loading: boolean;
   error: string;
+  online: boolean;
   cloudEnabled: boolean;
   importAvailable: boolean;
   importLocal: (scope: ItemScope) => Promise<void>;
@@ -27,12 +28,13 @@ export function useScheduleSync(): ScheduleSyncState {
   const [state, setState] = useState<AppState>(() => loadState());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [online, setOnline] = useState(() => navigator.onLine);
   const [importAvailable, setImportAvailable] = useState(false);
   const reloadTimer = useRef<number | null>(null);
   const cloudEnabled = Boolean(auth.user && partnership && !auth.demoMode);
 
   const refresh = useCallback(async () => {
-    if (!cloudEnabled || !partnership) return;
+    if (!cloudEnabled || !partnership || !navigator.onLine) return;
     setLoading(true);
     try {
       const cloudState = await loadCloudSchedule(partnership.id);
@@ -55,14 +57,27 @@ export function useScheduleSync(): ScheduleSyncState {
   }, [cloudEnabled, partnership]);
 
   useEffect(() => {
+    const updateOnline = () => setOnline(navigator.onLine);
+    window.addEventListener("online", updateOnline);
+    window.addEventListener("offline", updateOnline);
+    return () => {
+      window.removeEventListener("online", updateOnline);
+      window.removeEventListener("offline", updateOnline);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!cloudEnabled) {
       saveState(state);
     }
   }, [cloudEnabled, state]);
 
   useEffect(() => {
+    if (online && cloudEnabled) void refresh();
+  }, [cloudEnabled, online, refresh]);
+
+  useEffect(() => {
     if (!cloudEnabled || !partnership) return;
-    void refresh();
     const channel = subscribeToCloudSchedule(partnership.id, () => {
       if (reloadTimer.current !== null) window.clearTimeout(reloadTimer.current);
       reloadTimer.current = window.setTimeout(() => void refresh(), 120);
@@ -94,6 +109,7 @@ export function useScheduleSync(): ScheduleSyncState {
     setState,
     loading,
     error,
+    online,
     cloudEnabled,
     importAvailable,
     importLocal,

@@ -1,47 +1,42 @@
 # Brand and monetization
 
-## Name
-
-| Layer | Name |
-| --- | --- |
-| Product / store | **Dayline** |
-| Repo | `scheduler` |
-| Tagline | See your whole day: routines, checklist, and what’s on the clock. |
-
-“Scheduler” is kept as the codename. It is too generic to trademark or rank in app stores.
-
-Voice: calm, personal, human. Booking copy is “Grab coffee with me”, not “Schedule a 30-minute meeting”.
-
 ## Positioning
 
-Personal life OS: Google Calendar is weak at habits; Todoist is weak at a real day grid; Calendly is built for sales. Dayline is the Today screen that holds all three.
+**Dayline — a shared day for two.**
 
-## Freemium boundaries
+Dayline gives couples one calm place for personal routines, shared commitments,
+and the week ahead. It is intentionally not a workplace team manager, household
+surveillance tool, or competitive habit game.
 
-**Free**
+Voice: warm, direct, private, and low-pressure. Use “Together” rather than
+“team,” “member performance,” or “accountability score.”
 
-- Today view, day/week calendar
-- Recurring routines and daily checklist
-- Manual events
-- **One** booking page
-- Local device only (this slice); later, cloud sync for a single device login
+## Product principles
 
-**Pro** (`$6/month` or `$48/year` — personal-life price, under Calendly)
+- Preserve individual privacy inside a shared relationship.
+- Show shared work once rather than duplicating it in both calendars.
+- Make ownership and completion expectations explicit.
+- Prefer gentle acknowledgment over rankings or streak pressure.
+- Let admin rights manage the partnership, never the partner's private data.
 
-- Google Calendar **read** then **two-way** (Phase 2–3)
-- Extra booking pages and custom slug branding
-- Email reminders and booking analytics
-- Export / delete archive
-- No ads (privacy promise)
+## Freemium direction
 
-**Not in v1 pricing:** paid guest bookings, template packs. Revisit as add-ons after Pro converts.
+The Duo scheduler should remain free for two people to support organic invites.
 
-## Primary monetization hook
+Potential Pro value:
 
-People will not pay for a checklist. They will pay when Dayline is the **source of truth next to Google Calendar** and when a **booking link they already share** depends on that calendar being accurate.
+- calendar integrations and conflict handling;
+- expense history, settlement, and export;
+- advanced reminders and recurring couple reviews;
+- travel/timezone planning and availability suggestions;
+- archive/export and richer shared-goal history.
 
-Conversion moment: user shares a booking link **or** hits the Google Calendar connect wall after a week of daily use.
+Do not paywall privacy controls, data deletion, basic invitations, realtime
+completion, or the core two-person schedule.
 
-## Privacy
+## Future couple modules
 
-Paid tier stays ad-free. Export and delete are table stakes before charging for calendar access.
+Shared rituals, date ideas, next-visit countdowns, availability overlap,
+private surprise reveals, shared goals, expenses, and opt-in daily check-ins
+should reuse the partnership model while staying visually separate from the
+daily schedule.

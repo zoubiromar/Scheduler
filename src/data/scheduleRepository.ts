@@ -351,13 +351,15 @@ export async function importLocalSchedule(
   }
 
   for (const source of [...localState.tasks, ...localState.events]) {
-    const item = {
+    const visibility: ItemVisibility =
+      scope === "shared" ? "partner_visible" : "private";
+    const item: ScheduleItem = {
       ...source,
       id: crypto.randomUUID(),
       ownerId: userId,
       partnershipId,
       scope,
-      visibility: scope === "shared" ? "partner_visible" : "private",
+      visibility,
       assigneeIds: [userId],
       completionRule: "assigned" as const,
       anchorTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,

@@ -16,7 +16,9 @@ test("opens the duo demo from the public homepage", async ({ page }) => {
     }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Explore demo" }).click();
-  await expect(page.getByText("Together", { exact: true }).first()).toBeVisible();
+  await expect(
+    page.locator(".duo-lane-shared .duo-lane-header"),
+  ).toContainText("Together");
   await expect(page.getByText("Alex & Sam")).toBeVisible();
   await expect(page.locator(".duo-lane-mine")).toBeVisible();
   await expect(page.locator(".duo-lane-partner")).toBeVisible();

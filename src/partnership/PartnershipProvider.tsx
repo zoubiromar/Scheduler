@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useAuth } from "../auth/AuthProvider";
+import { supabase } from "../lib/supabase";
 import {
   acceptPartnerInviteById,
   declinePartnerInvite,
@@ -115,6 +116,29 @@ export function PartnershipProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void Promise.all([refresh(), refreshInvites()]);
   }, [refresh, refreshInvites]);
+
+  useEffect(() => {
+    const email = auth.user?.email?.trim().toLowerCase();
+    if (!supabase || auth.demoMode || !auth.user || !email) return;
+
+    const channel = supabase
+      .channel(`incoming-invites:${auth.user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "partnership_invites",
+          filter: `invited_email=eq.${email}`,
+        },
+        () => void refreshInvites(),
+      )
+      .subscribe();
+
+    return () => {
+      void channel.unsubscribe();
+    };
+  }, [auth.demoMode, auth.user, refreshInvites]);
 
   const acceptInvite = useCallback(
     async (inviteId: string) => {

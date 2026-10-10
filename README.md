@@ -42,7 +42,7 @@ Configure these Edge Function secrets in Supabase:
 ```text
 APP_URL=https://zoubiromar.github.io/Scheduler/
 RESEND_API_KEY=re_...
-RESEND_FROM_EMAIL=Pellia <invites@your-verified-domain.com>
+RESEND_FROM_EMAIL=Pellia <invites@mycompanion.cc>
 ```
 
 Deploy with:

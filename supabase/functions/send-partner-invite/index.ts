@@ -144,7 +144,7 @@ Deno.serve(async (request) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: Deno.env.get("RESEND_FROM_EMAIL") ?? "Pellia <onboarding@resend.dev>",
+        from: Deno.env.get("RESEND_FROM_EMAIL") ?? "Pellia <invites@mycompanion.cc>",
         to: [email],
         subject: `${inviter} invited you to Pellia`,
         html: inviteHtml({

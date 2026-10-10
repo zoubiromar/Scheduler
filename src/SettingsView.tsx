@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "./auth/AuthProvider";
 import {
   acceptPartnerInvite,
-  createPartnerInvite,
   createPartnership,
   dissolvePartnership,
   leavePartnership,
@@ -10,6 +9,7 @@ import {
   loadUserPreferences,
   removePartnershipMember,
   revokePartnerInvite,
+  sendPartnerInvite,
   transferPartnershipAdmin,
   updatePartnershipName,
   updateProfile,
@@ -54,6 +54,7 @@ export function SettingsView({
   );
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteUrl, setInviteUrl] = useState("");
+  const [inviteDelivery, setInviteDelivery] = useState("");
   const [pendingInvites, setPendingInvites] = useState<PartnerInvite[]>([]);
   const [preferences, setPreferences] =
     useState<UserPreferences>(defaultPreferences);
@@ -292,11 +293,17 @@ export function SettingsView({
               <button
                 className="primary"
                 type="button"
-                disabled={busy || auth.demoMode}
+                disabled={busy || auth.demoMode || !inviteEmail.trim()}
                 onClick={() =>
                   void run(async () => {
-                    const invite = await createPartnerInvite(inviteEmail);
+                    const invite = await sendPartnerInvite(inviteEmail);
                     setInviteUrl(invite.url);
+                    setInviteDelivery(
+                      invite.emailSent
+                        ? `Invitation emailed to ${invite.email}.`
+                        : invite.emailError ??
+                            "The email could not be sent. Share the link below.",
+                    );
                     setPendingInvites([
                       {
                         id: invite.id,
@@ -309,8 +316,19 @@ export function SettingsView({
                   }, "Invitation created.")
                 }
               >
-                Create invite
+                Email invitation
               </button>
+              {inviteDelivery && (
+                <p
+                  className={
+                    inviteDelivery.startsWith("Invitation emailed")
+                      ? "form-success"
+                      : "form-error"
+                  }
+                >
+                  {inviteDelivery}
+                </p>
+              )}
               {inviteUrl && (
                 <div className="invite-link">
                   <input readOnly value={inviteUrl} aria-label="Invitation link" />

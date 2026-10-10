@@ -5,6 +5,20 @@ const migration = readFileSync(
   new URL("../../supabase/migrations/202610090001_dayline_duo.sql", import.meta.url),
   "utf8",
 );
+const emailInviteMigration = readFileSync(
+  new URL(
+    "../../supabase/migrations/202610100001_email_invites.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const inviteEmailFunction = readFileSync(
+  new URL(
+    "../../supabase/functions/send-partner-invite/index.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 describe("Supabase duo security contract", () => {
   it("creates the two-person partnership and invitation primitives", () => {
@@ -46,5 +60,29 @@ describe("Supabase duo security contract", () => {
     expect(migration).toContain(
       "grant update (display_name, avatar_url, timezone) on public.profiles",
     );
+  });
+
+  it("discovers email invites and safely merges a solo partnership", () => {
+    expect(emailInviteMigration).toContain(
+      "create or replace function public.get_my_pending_invites()",
+    );
+    expect(emailInviteMigration).toContain(
+      "lower(coalesce(auth.jwt() ->> 'email', ''))",
+    );
+    expect(emailInviteMigration).toContain(
+      "update public.schedule_items",
+    );
+    expect(emailInviteMigration).toContain(
+      "create or replace function public.accept_partner_invite_by_id",
+    );
+  });
+
+  it("sends a branded invite email with a durable account fallback", () => {
+    expect(inviteEmailFunction).toContain("invited you to Pellia");
+    expect(inviteEmailFunction).toContain("Accept invitation");
+    expect(inviteEmailFunction).toContain(
+      "Pellia will still show this invitation when you sign in",
+    );
+    expect(inviteEmailFunction).toContain("RESEND_API_KEY");
   });
 });

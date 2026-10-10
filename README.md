@@ -31,6 +31,29 @@ The schema enforces a maximum of two members, one admin, private-item isolation,
 shared-item editing, per-user completion, and expiring partner invitations via
 Row Level Security and security-definer functions.
 
+## Invitation email delivery
+
+Pellia discovers invitations by the signed-in user's email, so recipients see
+an in-app banner even when they create an account without opening the email
+link. The `send-partner-invite` Edge Function creates and emails the invitation.
+
+Configure these Edge Function secrets in Supabase:
+
+```text
+APP_URL=https://zoubiromar.github.io/Scheduler/
+RESEND_API_KEY=re_...
+RESEND_FROM_EMAIL=Pellia <invites@mycompanion.cc>
+```
+
+Deploy with:
+
+```bash
+supabase functions deploy send-partner-invite --project-ref <project-ref> --use-api
+```
+
+Without a Resend key, invite links still work and the UI gives the admin a
+copy-link fallback instead of claiming an email was sent.
+
 ## Build and deploy
 
 ```bash

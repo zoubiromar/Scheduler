@@ -1621,6 +1621,10 @@ button:disabled {
     display: none;
   }
 
+  .app-sidebar .sign-out-button {
+    margin-left: auto;
+  }
+
   .mobile-bottom-nav {
     position: fixed;
     z-index: 60;
@@ -1682,7 +1686,7 @@ button:disabled {
     padding-bottom: 28px;
   }
 
-  .landing-nav .ghost {
+  .landing-nav .ghost:not(.sign-out-button) {
     display: none;
   }
 

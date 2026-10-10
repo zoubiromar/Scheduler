@@ -1,26 +1,73 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 
+function accountLabel(user: { email?: string; user_metadata?: Record<string, unknown> } | null): string {
+  const name = user?.user_metadata?.full_name ?? user?.user_metadata?.name;
+  if (typeof name === "string" && name.trim()) return name.trim();
+  return user?.email ?? "there";
+}
+
 export function LandingPage() {
   const auth = useAuth();
   const navigate = useNavigate();
+  const signedIn = Boolean(auth.user) || auth.demoMode;
+
+  async function signOut() {
+    await auth.signOut();
+    navigate("/", { replace: true });
+  }
 
   return (
     <main className="landing-page">
       <nav className="landing-nav">
         <strong>Pellia</strong>
-        <div>
-          <Link className="ghost link-button" to="/auth">
-            Sign in
-          </Link>
-          <Link className="primary link-button" to={auth.user ? "/app" : "/auth"}>
-            {auth.user ? "Open Pellia" : "Create account"}
-          </Link>
-        </div>
+        {auth.loading ? null : signedIn ? (
+          <div>
+            <button className="ghost sign-out-button" type="button" onClick={() => void signOut()}>
+              Sign out
+            </button>
+            <Link className="primary link-button" to="/app">
+              Open Pellia
+            </Link>
+          </div>
+        ) : (
+          <div>
+            <Link className="ghost link-button" to="/auth">
+              Sign in
+            </Link>
+            <Link className="primary link-button" to="/auth">
+              Create account
+            </Link>
+          </div>
+        )}
       </nav>
 
       <section className="landing-hero">
         <div className="landing-copy">
+          {auth.loading ? (
+            <>
+              <p className="kicker">Pellia</p>
+              <h1>Opening your account…</h1>
+            </>
+          ) : signedIn ? (
+            <>
+              <p className="kicker">Welcome back</p>
+              <h1>Hello, {accountLabel(auth.user)}.</h1>
+              <p>
+                Your shared day is ready. Open Pellia to continue, or sign out
+                to use a different account.
+              </p>
+              <div className="landing-actions">
+                <Link className="primary link-button" to="/app">
+                  Open Pellia
+                </Link>
+                <button className="ghost" type="button" onClick={() => void signOut()}>
+                  Sign out
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
           <p className="kicker">A shared day for two</p>
           <h1>Plan your lives together without losing your own space.</h1>
           <p>
@@ -47,6 +94,8 @@ export function LandingPage() {
               Demo mode is available. Connect Supabase to enable real accounts
               and invitations.
             </p>
+          )}
+            </>
           )}
         </div>
 

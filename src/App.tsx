@@ -15,6 +15,7 @@ import { TodayView, shiftIso } from "./TodayView";
 import { TasksView } from "./TasksView";
 import { WeekView } from "./WeekView";
 import { SettingsView } from "./SettingsView";
+import { IncomingInviteBanner } from "./IncomingInviteBanner";
 import { seedState, STORAGE_KEY } from "./lib/storage";
 import { withDuoDefaults } from "./lib/duo";
 import { addDays, todayISO } from "./lib/dates";
@@ -353,6 +354,7 @@ export default function App() {
       </header>
 
       <main className="app-workspace">
+      <IncomingInviteBanner />
       {(!schedule.online ||
         schedule.loading ||
         schedule.error ||

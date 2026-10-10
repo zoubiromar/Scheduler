@@ -9,7 +9,11 @@ import {
 } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import {
+  acceptPartnerInviteById,
+  declinePartnerInvite,
+  loadMyPendingInvites,
   loadPartnershipContext,
+  type IncomingPartnerInvite,
   type PartnershipContext,
 } from "../data/partnershipRepository";
 
@@ -17,7 +21,11 @@ interface PartnershipContextValue {
   partnership: PartnershipContext | null;
   loading: boolean;
   error: string;
+  incomingInvites: IncomingPartnerInvite[];
   refresh: () => Promise<void>;
+  refreshInvites: () => Promise<void>;
+  acceptInvite: (inviteId: string) => Promise<void>;
+  declineInvite: (inviteId: string) => Promise<void>;
 }
 
 const Context = createContext<PartnershipContextValue | null>(null);
@@ -56,6 +64,9 @@ export function PartnershipProvider({ children }: { children: ReactNode }) {
   );
   const [loading, setLoading] = useState(Boolean(auth.user));
   const [error, setError] = useState("");
+  const [incomingInvites, setIncomingInvites] = useState<
+    IncomingPartnerInvite[]
+  >([]);
 
   const refresh = useCallback(async () => {
     if (auth.demoMode) {
@@ -85,13 +96,68 @@ export function PartnershipProvider({ children }: { children: ReactNode }) {
     }
   }, [auth.demoMode, auth.user]);
 
+  const refreshInvites = useCallback(async () => {
+    if (auth.demoMode || !auth.user) {
+      setIncomingInvites([]);
+      return;
+    }
+    try {
+      setIncomingInvites(await loadMyPendingInvites());
+    } catch (nextError) {
+      setError(
+        nextError instanceof Error
+          ? nextError.message
+          : "Could not load your invitations.",
+      );
+    }
+  }, [auth.demoMode, auth.user]);
+
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    void Promise.all([refresh(), refreshInvites()]);
+  }, [refresh, refreshInvites]);
+
+  const acceptInvite = useCallback(
+    async (inviteId: string) => {
+      setLoading(true);
+      try {
+        await acceptPartnerInviteById(inviteId);
+        await Promise.all([refresh(), refreshInvites()]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [refresh, refreshInvites],
+  );
+
+  const declineInvite = useCallback(
+    async (inviteId: string) => {
+      await declinePartnerInvite(inviteId);
+      await refreshInvites();
+    },
+    [refreshInvites],
+  );
 
   const value = useMemo(
-    () => ({ partnership, loading, error, refresh }),
-    [error, loading, partnership, refresh],
+    () => ({
+      partnership,
+      loading,
+      error,
+      incomingInvites,
+      refresh,
+      refreshInvites,
+      acceptInvite,
+      declineInvite,
+    }),
+    [
+      acceptInvite,
+      declineInvite,
+      error,
+      incomingInvites,
+      loading,
+      partnership,
+      refresh,
+      refreshInvites,
+    ],
   );
 
   return <Context.Provider value={value}>{children}</Context.Provider>;

@@ -1441,6 +1441,50 @@ button:disabled {
   min-width: 0;
 }
 
+.incoming-invites {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.incoming-invite-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid color-mix(in srgb, #7067a8 36%, var(--line));
+  border-radius: 17px;
+  background: color-mix(in srgb, #7067a8 7%, var(--paper));
+  padding: 13px;
+}
+
+.invite-mark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 12px;
+  background: #7067a8;
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.incoming-invite-banner strong,
+.incoming-invite-banner span {
+  display: block;
+}
+
+.incoming-invite-banner span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.incoming-invite-actions {
+  display: flex;
+  gap: 6px;
+}
+
 .mobile-bottom-nav {
   display: none;
 }
@@ -1591,6 +1635,15 @@ button:disabled {
     box-shadow: 0 12px 34px rgba(28, 25, 22, 0.16);
     padding: 5px;
     backdrop-filter: blur(14px);
+  }
+
+  .incoming-invite-banner {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .incoming-invite-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
   }
 
   .mobile-bottom-nav button {

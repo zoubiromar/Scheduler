@@ -31,6 +31,22 @@ export interface PartnerInvite {
   expiresAt: string;
 }
 
+export interface IncomingPartnerInvite {
+  id: string;
+  partnershipId: string;
+  partnershipName: string;
+  inviterName: string;
+  email: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface SentPartnerInvite extends PartnerInvite {
+  url: string;
+  emailSent: boolean;
+  emailError?: string;
+}
+
 export interface UserPreferences {
   weekStartsOn: number;
   defaultScope: "personal" | "shared";
@@ -128,6 +144,64 @@ export async function createPartnerInvite(
   };
 }
 
+export async function sendPartnerInvite(
+  email: string,
+): Promise<SentPartnerInvite> {
+  const client = requireSupabase();
+  const normalizedEmail = email.trim().toLowerCase();
+  const { data, error } = await client.functions.invoke("send-partner-invite", {
+    body: { email: normalizedEmail },
+  });
+
+  if (error || data?.error) {
+    const fallback = await createPartnerInvite(normalizedEmail);
+    return {
+      ...fallback,
+      emailSent: false,
+      emailError:
+        data?.error ??
+        error?.message ??
+        "Email delivery is unavailable. Share the link instead.",
+    };
+  }
+
+  return {
+    id: data.inviteId,
+    partnershipId: "",
+    email: normalizedEmail,
+    status: "pending",
+    expiresAt: data.expiresAt,
+    url: data.inviteUrl,
+    emailSent: Boolean(data.emailSent),
+    emailError: data.emailError,
+  };
+}
+
+export async function loadMyPendingInvites(): Promise<IncomingPartnerInvite[]> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("get_my_pending_invites");
+  if (error) throw error;
+  return (data ?? []).map(
+    (row: {
+      invite_id: string;
+      partnership_id: string;
+      partnership_name: string;
+      inviter_name: string;
+      invited_email: string;
+      expires_at: string;
+      created_at: string;
+    }) => ({
+      id: row.invite_id,
+      partnershipId: row.partnership_id,
+      partnershipName: row.partnership_name,
+      inviterName: row.inviter_name,
+      email: row.invited_email,
+      expiresAt: row.expires_at,
+      createdAt: row.created_at,
+    }),
+  );
+}
+
 export async function loadPendingInvites(
   partnershipId: string,
 ): Promise<PartnerInvite[]> {
@@ -155,6 +229,25 @@ export async function acceptPartnerInvite(token: string): Promise<string> {
   });
   if (error) throw error;
   return data as string;
+}
+
+export async function acceptPartnerInviteById(
+  inviteId: string,
+): Promise<string> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("accept_partner_invite_by_id", {
+    invite_id: inviteId,
+  });
+  if (error) throw error;
+  return data as string;
+}
+
+export async function declinePartnerInvite(inviteId: string): Promise<void> {
+  const client = requireSupabase();
+  const { error } = await client.rpc("decline_partner_invite", {
+    invite_id: inviteId,
+  });
+  if (error) throw error;
 }
 
 export async function revokePartnerInvite(inviteId: string): Promise<void> {

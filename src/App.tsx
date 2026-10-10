@@ -314,7 +314,10 @@ export default function App() {
     <div className="duo-app-shell">
       <header className="app-header app-sidebar">
         <div className="app-brand">
-          <h1>Pellia</h1>
+          <a className="brand-mark" href="#/">
+            <i aria-hidden="true"><span></span><span></span></i>
+            Pellia
+          </a>
           <span>{partnership?.name ?? "Your space"}</span>
         </div>
         <nav className="nav app-nav">
@@ -388,8 +391,10 @@ export default function App() {
       {schedule.importAvailable && (
         <aside className="import-banner">
           <div>
-            <strong>Bring your existing Pellia with you?</strong>
-            <span>Your local items have not been uploaded.</span>
+            <strong>This browser has a local practice schedule.</strong>
+            <span>
+              It is not your partner’s plan. Import privately keeps it visible only to you. Import as shared lets both of you see it.
+            </span>
           </div>
           <button
             className="ghost"

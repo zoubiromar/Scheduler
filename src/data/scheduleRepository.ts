@@ -283,6 +283,19 @@ export async function upsertCloudTag(
   if (error) throw error;
 }
 
+export async function sharePrivateItems(userId: string): Promise<number> {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("schedule_items")
+    .update({ visibility: "partner_visible" })
+    .eq("created_by", userId)
+    .eq("scope", "personal")
+    .eq("visibility", "private")
+    .select("id");
+  if (error) throw error;
+  return data?.length ?? 0;
+}
+
 export async function deleteCloudTag(tagId: string): Promise<void> {
   const client = requireSupabase();
   const { error } = await client.from("tags").delete().eq("id", tagId);

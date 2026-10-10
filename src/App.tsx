@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth/AuthProvider";
 import {
   deleteCloudOverride,
@@ -26,6 +27,7 @@ type Tab = "today" | "week" | "tasks" | "settings";
 
 export default function App() {
   const auth = useAuth();
+  const navigate = useNavigate();
   const partnershipState = usePartnership();
   const schedule = useScheduleSync();
   const { state, setState } = schedule;
@@ -340,6 +342,15 @@ export default function App() {
             Settings
           </button>
         </nav>
+        <button
+          className="ghost sign-out-button"
+          type="button"
+          onClick={() => {
+            void auth.signOut().then(() => navigate("/", { replace: true }));
+          }}
+        >
+          Sign out
+        </button>
         <div className="sidebar-members" aria-label="Partnership members">
           {partnership?.members.map((member) => (
             <span

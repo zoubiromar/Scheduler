@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { usePartnership } from "../partnership/PartnershipProvider";
-import { loadState, saveState, STORAGE_KEY } from "../lib/storage";
+import { loadState, saveState } from "../lib/storage";
+import { hasUserCreatedLocalSchedule } from "../lib/localSchedule";
 import type { AppState, ItemScope } from "../types";
 import {
   importLocalSchedule,
@@ -42,7 +43,7 @@ export function useScheduleSync(): ScheduleSyncState {
       setImportAvailable(
         cloudState.tasks.length === 0 &&
           cloudState.events.length === 0 &&
-          Boolean(localStorage.getItem(STORAGE_KEY)),
+          hasUserCreatedLocalSchedule(),
       );
       setError("");
     } catch (nextError) {
@@ -67,10 +68,10 @@ export function useScheduleSync(): ScheduleSyncState {
   }, []);
 
   useEffect(() => {
-    if (!cloudEnabled) {
+    if (!auth.user || auth.demoMode) {
       saveState(state);
     }
-  }, [cloudEnabled, state]);
+  }, [auth.demoMode, auth.user, state]);
 
   useEffect(() => {
     if (online && cloudEnabled) void refresh();

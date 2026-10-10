@@ -20,7 +20,10 @@ export function LandingPage() {
   return (
     <main className="landing-page">
       <nav className="landing-nav">
-        <strong>Pellia</strong>
+        <Link className="brand-mark" to="/">
+            <i aria-hidden="true"><span></span><span></span></i>
+            Pellia
+          </Link>
         {auth.loading ? null : signedIn ? (
           <div>
             <button className="ghost sign-out-button" type="button" onClick={() => void signOut()}>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "./auth/AuthProvider";
+import { sharePrivateItems } from "./data/scheduleRepository";
 import {
   acceptPartnerInvite,
   createPartnership,
@@ -369,6 +370,10 @@ export function SettingsView({
 
         <article className="settings-card">
           <h3>Schedule defaults</h3>
+          <p>
+            These choices apply to items you create next. Private items already
+            on your schedule stay private until you share them.
+          </p>
           <label className="field">
             <span>New items</span>
             <select
@@ -430,6 +435,20 @@ export function SettingsView({
             }
           >
             Save defaults
+          </button>
+          <button
+            className="ghost"
+            type="button"
+            disabled={busy || !auth.user || auth.demoMode}
+            onClick={() =>
+              auth.user &&
+              void run(async () => {
+                const count = await sharePrivateItems(auth.user!.id);
+                if (count === 0) throw new Error("You have no private items to share.");
+              }, "Your private items are now visible to your partner.")
+            }
+          >
+            Share existing private items
           </button>
         </article>
 
@@ -539,10 +558,10 @@ export function SettingsView({
           {importAvailable && (
             <div className="settings-actions">
               <button className="ghost" type="button" onClick={() => void onImport("personal")}>
-                Import local items privately
+                Import privately — only you can see them
               </button>
               <button className="ghost" type="button" onClick={() => void onImport("shared")}>
-                Import local items as shared
+                Import as shared — both partners can see them
               </button>
             </div>
           )}

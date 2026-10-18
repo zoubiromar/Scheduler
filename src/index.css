@@ -1213,12 +1213,28 @@ a.primary,
 }
 
 .sync-banner {
-  border-radius: 10px;
-  background: var(--sage-soft);
+  position: fixed;
+  z-index: 80;
+  top: 14px;
+  right: 16px;
+  max-width: min(360px, calc(100vw - 32px));
+  border: 1px solid color-mix(in srgb, var(--sage) 25%, var(--line));
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: 0 8px 24px rgba(28, 25, 22, 0.12);
   color: var(--sage);
-  margin: 0 0 12px;
-  padding: 8px 10px;
-  font-size: 0.78rem;
+  padding: 7px 13px;
+  font-size: 0.75rem;
+  pointer-events: none;
+}
+
+@media (max-width: 760px) {
+  .sync-banner {
+    top: auto;
+    bottom: 84px;
+    right: 50%;
+    transform: translateX(50%);
+  }
 }
 
 .sync-banner.error {

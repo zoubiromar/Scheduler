@@ -66,11 +66,20 @@ export default function App() {
 
   function runCloud(action: () => Promise<void>) {
     if (!schedule.cloudEnabled) return;
-    void action().catch((error) =>
-      setActionError(
-        error instanceof Error ? error.message : "The shared schedule could not sync.",
-      ),
-    );
+    setActionError("");
+    void action().catch(async (error) => {
+      const message =
+        error instanceof Error
+          ? error.message
+          : error &&
+              typeof error === "object" &&
+              "message" in error &&
+              typeof error.message === "string"
+            ? error.message
+            : "The shared schedule could not sync.";
+      setActionError(message);
+      await schedule.refresh();
+    });
   }
 
   function prepareItem<T extends RepeatingTask | CalendarEvent>(item: T): T {

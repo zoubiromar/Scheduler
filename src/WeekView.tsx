@@ -1,5 +1,5 @@
 import { useAuth } from "./auth/AuthProvider";
-import { completionState, itemLane, type DuoLane } from "./lib/duo";
+import { canRecordCompletion, completionState, itemLane, type DuoLane } from "./lib/duo";
 import {
   addDays,
   formatTime,
@@ -224,10 +224,12 @@ export function WeekView({
           const totalLanes =
             laneCounts.mine + laneCounts.shared + laneCounts.partner;
 
-          const toggle = (item: WeekItem) =>
+          const toggle = (item: WeekItem) => {
+            if (!canRecordCompletion(item, currentUserId)) return;
             item.kind === "task"
               ? onToggleTask(item.sourceId, item.completionDate)
               : onToggleEvent(item.sourceId);
+          };
 
           return (
             <article
@@ -297,6 +299,7 @@ export function WeekView({
                             <input
                               type="checkbox"
                               checked={item.checked}
+                              disabled={!canRecordCompletion(item, currentUserId)}
                               onChange={() => toggle(item)}
                             />
                             Completed by you
@@ -323,6 +326,7 @@ export function WeekView({
                           <input
                             type="checkbox"
                             checked={item.checked}
+                            disabled={!canRecordCompletion(item, currentUserId)}
                             onChange={() => toggle(item as WeekItem)}
                           />
                           <span>

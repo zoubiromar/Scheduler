@@ -50,6 +50,18 @@ export function withDuoDefaults<T extends ScheduleItem>(
   };
 }
 
+export function canRecordCompletion(
+  item: DuoItemFields,
+  userId: string,
+): boolean {
+  if ((item.scope ?? "personal") !== "shared") {
+    return !item.ownerId || item.ownerId === userId;
+  }
+  const rule = item.completionRule ?? "assigned";
+  if (rule === "either" || rule === "both") return true;
+  return !item.assigneeIds?.length || item.assigneeIds.includes(userId);
+}
+
 export function itemLane(
   item: DuoItemFields,
   currentUserId: string,

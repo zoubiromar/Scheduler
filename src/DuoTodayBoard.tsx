@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useAuth } from "./auth/AuthProvider";
 import {
+  canRecordCompletion,
   completionState,
   itemLane,
   type DuoLane,
@@ -131,11 +132,10 @@ export function DuoTodayBoard({
               state.completions,
               memberIds,
             );
-            const canAct =
-              lane === "shared" ||
-              lane === "mine" ||
-              item.assigneeIds?.includes(currentUserId);
-            const checked = status.completedUserIds.includes(currentUserId);
+            const canAct = canRecordCompletion(item, currentUserId);
+            const checked = canAct
+              ? status.completedUserIds.includes(currentUserId)
+              : status.done;
             return (
               <article
                 className={`duo-task-card${status.done ? " completed" : ""}`}
@@ -145,7 +145,12 @@ export function DuoTodayBoard({
                   className={`check${checked ? " on" : ""}`}
                   type="button"
                   disabled={!canAct}
-                  aria-label={`Mark ${item.title} ${checked ? "incomplete" : "complete"}`}
+                  title={canAct ? undefined : `Only ${label} can complete this`}
+                  aria-label={
+                    canAct
+                      ? `Mark ${item.title} ${checked ? "incomplete" : "complete"}`
+                      : `${item.title}: ${checked ? "completed" : "not completed"} by ${label}`
+                  }
                   onClick={() =>
                     item.kind === "task"
                       ? onToggleTask(item.sourceId, item.completionDate)
@@ -189,7 +194,7 @@ export function DuoTodayBoard({
                     })}
                   </div>
                 </div>
-                {canAct && (
+                {lane !== "partner" && (
                   <button
                     className="ghost compact-action"
                     type="button"

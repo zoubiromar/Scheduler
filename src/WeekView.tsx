@@ -298,11 +298,17 @@ export function WeekView({
                           <label>
                             <input
                               type="checkbox"
-                              checked={item.checked}
+                              checked={
+                                canRecordCompletion(item, currentUserId)
+                                  ? item.checked
+                                  : item.completed
+                              }
                               disabled={!canRecordCompletion(item, currentUserId)}
                               onChange={() => toggle(item)}
                             />
-                            Completed by you
+                            {canRecordCompletion(item, currentUserId)
+                              ? "Completed by you"
+                              : `Completed by ${laneLabels[item.duoLane]}`}
                           </label>
                         </span>
                       </div>
@@ -325,8 +331,17 @@ export function WeekView({
                         >
                           <input
                             type="checkbox"
-                            checked={item.checked}
+                            checked={
+                              canRecordCompletion(item, currentUserId)
+                                ? item.checked
+                                : item.completed
+                            }
                             disabled={!canRecordCompletion(item, currentUserId)}
+                            title={
+                              canRecordCompletion(item, currentUserId)
+                                ? undefined
+                                : `Only ${laneLabels[item.duoLane]} can complete this`
+                            }
                             onChange={() => toggle(item as WeekItem)}
                           />
                           <span>

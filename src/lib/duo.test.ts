@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { RepeatingTask, TaskCompletion } from "../types";
 import {
+  canRecordCompletion,
   completionState,
   itemLane,
   withDuoDefaults,
@@ -33,6 +34,27 @@ describe("duo schedule semantics", () => {
       completionRule: "assigned",
       assigneeIds: ["alex"],
     });
+  });
+
+  it("keeps a partner from completing someone else's personal item", () => {
+    expect(
+      canRecordCompletion(
+        { scope: "personal", ownerId: "alex", visibility: "partner_visible" },
+        "sam",
+      ),
+    ).toBe(false);
+    expect(
+      canRecordCompletion(
+        { scope: "personal", ownerId: "sam", visibility: "partner_visible" },
+        "sam",
+      ),
+    ).toBe(true);
+    expect(
+      canRecordCompletion(
+        { scope: "shared", completionRule: "either", assigneeIds: ["alex"] },
+        "sam",
+      ),
+    ).toBe(true);
   });
 
   it("places shared items once and personal items in their owner's lane", () => {
